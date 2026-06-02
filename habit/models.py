@@ -103,42 +103,34 @@ class TaskTracker(models.Model):
     task_completion_date = models.DateTimeField(null=True, blank=True)
 
 
-    @classmethod
-    def create_tasks(cls, habit, n=0):
-        """
-        Populates the TaskTracker table with tasks for a given habit.
+@classmethod
+def create_tasks(cls, habit, n=0):
+    """
+    Populates the TaskTracker table with tasks for a given habit.
+    The first task starts and is due on the habit's start date,
+    so users can begin tracking the habit on the same day.
+    """
 
-        Generates tasks for the specified habit and inserts them into 
-        the TaskTracker table, assigning due dates and task numbers 
-        based on the habit's creation time, goal, and frequency.
+    time_jump = habit.goal / habit.num_of_tasks
+    time_skip = timedelta(hours=time_jump * 24)
 
-        Parameters
-        ----------
-        habit : Habit
-            The habit for which tasks are to be created.
-        n : int, optional
-            The starting task number. Defaults to 0.
-        """
+    due_date = habit.start_date
+    current_start_date = habit.start_date
+    default = 'In progress'
 
-        # Calculate the time between tasks
-        time_jump = habit.goal / habit.num_of_tasks
-        time_skip = timedelta(hours=time_jump*24)
+    for i in range(n + 1, habit.num_of_tasks + (n + 1)):
 
-        # Initialize start and due dates for tasks
-        due_date = start_date = habit.start_date
-        default= 'In progress'
-
-        # Increment the due_date and start_date by time_skip,
-        # skip the first iteration for start_date
-        for i in range(n+1, habit.num_of_tasks+(n+1)):
+        if i != n + 1:
             due_date += time_skip
-            if i == n+1:
-                current_start_date = start_date
-            else:
-                current_start_date += time_skip
-            cls.objects.create(habit=habit, due_date=due_date, task_number=i,
-                               task_status=default, start_date=current_start_date)
+            current_start_date += time_skip
 
+        cls.objects.create(
+            habit=habit,
+            due_date=due_date,
+            task_number=i,
+            task_status=default,
+            start_date=current_start_date
+        )
 
 
     @classmethod
