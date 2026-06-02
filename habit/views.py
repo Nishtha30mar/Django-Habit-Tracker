@@ -53,7 +53,13 @@ class HabitView(View):
         today_tasks = due_today_tasks(user_id=user_id)
         active_task = active_tasks(user_id=user_id)
         upcoming_task = upcoming_tasks(user_id=user_id)
-        user_full_name = User.objects.get(id=user_id).get_full_name().split()[0].capitalize()
+        user = User.objects.get(id=user_id)
+        full_name = user.get_full_name().strip()
+
+        if full_name:
+            user_full_name = full_name.split()[0].capitalize()
+        else:
+            user_full_name = user.username.capitalize()
 
         context = {
             'upcoming_tasks': upcoming_task,
