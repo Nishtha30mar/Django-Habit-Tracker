@@ -3,33 +3,104 @@
 
 {% block content %}
 <style>
-    /* Modern CSS Reset & Variables */
+    /* Fullscreen Reset - NO MARGINS, NO PADDING */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    /* Override any base.html margins */
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        overflow: hidden;
+    }
+
+    /* Remove any container padding from base template */
+    .container, .container-fluid {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Modern CSS Variables */
     :root {
         --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         --danger-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-bg: rgba(255, 255, 255, 0.98);
         --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.07);
         --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         --shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
         --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 
-    body {
+    /* Fullscreen App Container */
+    .fullscreen-app {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
-    /* Animated Gradient Welcome Banner */
+    /* Scrollable Content Area */
+    .main-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px 40px 30px 40px;
+    }
+
+    /* Custom Scrollbar */
+    .main-content::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .main-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .main-content::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+
+    .main-content::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    /* Animated Gradient Welcome Banner - Full Width */
     .welcome-banner {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         background-size: 200% 200%;
         animation: gradientShift 10s ease infinite;
-        border-radius: 30px;
+        border-radius: 20px;
         position: relative;
         overflow: hidden;
+        margin-bottom: 25px;
+        padding: 35px 40px !important;
     }
 
     @keyframes gradientShift {
@@ -64,6 +135,8 @@
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         position: relative;
         overflow: hidden;
+        cursor: pointer;
+        border-radius: 20px;
     }
 
     .stat-card::before {
@@ -82,18 +155,18 @@
     }
 
     .stat-card:hover {
-        transform: translateY(-10px) scale(1.02);
+        transform: translateY(-5px);
         box-shadow: var(--shadow-xl);
     }
 
     .stat-icon {
-        width: 60px;
-        height: 60px;
+        width: 55px;
+        height: 55px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 20px;
-        font-size: 30px;
+        border-radius: 15px;
+        font-size: 28px;
         transition: all 0.3s;
     }
 
@@ -104,12 +177,15 @@
     /* Modern Task Cards */
     .task-card {
         background: white;
-        border-radius: 24px;
+        border-radius: 20px;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         position: relative;
         overflow: hidden;
         border: none;
         box-shadow: var(--shadow-md);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .task-card::after {
@@ -124,7 +200,7 @@
     }
 
     .task-card:hover {
-        transform: translateY(-8px);
+        transform: translateY(-5px);
         box-shadow: var(--shadow-xl);
     }
 
@@ -145,28 +221,30 @@
 
     /* Modern Tabs */
     .glass-tabs {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
-        border-radius: 60px;
+        border-radius: 50px;
         padding: 5px;
         box-shadow: var(--shadow-sm);
+        display: inline-flex;
+        margin-bottom: 25px;
     }
 
     .tab-btn {
         border-radius: 50px;
-        padding: 12px 28px;
+        padding: 10px 28px;
         font-weight: 600;
         transition: all 0.3s ease;
         border: none;
         background: transparent;
         color: #666;
+        font-size: 0.95rem;
     }
 
     .tab-btn.active {
         background: var(--primary-gradient);
         color: white;
         box-shadow: var(--shadow-md);
-        transform: scale(1.05);
     }
 
     .tab-btn:not(.active):hover {
@@ -213,6 +291,7 @@
         transition: all 0.3s;
         position: relative;
         overflow: hidden;
+        margin-top: auto;
     }
 
     .complete-btn::before {
@@ -234,21 +313,24 @@
     }
 
     .complete-btn:hover {
-        transform: scale(1.05);
+        transform: scale(1.02);
         box-shadow: var(--shadow-md);
     }
 
-    /* Empty State Animation */
+    /* Empty State */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
         animation: fadeInUp 0.6s;
+        background: white;
+        border-radius: 20px;
+        box-shadow: var(--shadow-md);
     }
 
     @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
         }
         to {
             opacity: 1;
@@ -258,7 +340,7 @@
 
     /* Badge Styles */
     .badge-modern {
-        padding: 6px 14px;
+        padding: 5px 12px;
         border-radius: 30px;
         font-weight: 600;
         font-size: 0.75rem;
@@ -281,10 +363,47 @@
     .task-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-        gap: 24px;
+        gap: 20px;
+        width: 100%;
+    }
+
+    /* Card Body Content */
+    .card-body-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1400px) {
+        .main-content {
+            padding: 20px 30px 30px 30px;
+        }
+        
+        .task-grid {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+    }
+
+    @media (max-width: 992px) {
+        .main-content {
+            padding: 15px 20px 25px 20px;
+        }
+        
+        .task-grid {
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        }
+        
+        .welcome-banner {
+            padding: 25px 30px !important;
+        }
     }
 
     @media (max-width: 768px) {
+        .main-content {
+            padding: 15px 15px 20px 15px;
+        }
+        
         .task-grid {
             grid-template-columns: 1fr;
         }
@@ -293,308 +412,353 @@
             flex-direction: column;
             border-radius: 20px;
             gap: 8px;
+            width: 100%;
         }
         
         .tab-btn {
             width: 100%;
             text-align: center;
         }
+        
+        .welcome-banner {
+            padding: 20px !important;
+        }
+        
+        .display-4 {
+            font-size: 1.8rem !important;
+        }
+        
+        .stat-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 24px;
+        }
+    }
+
+    /* Progress Bar */
+    .progress {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+    }
+
+    /* Button Styles */
+    .btn-light, .btn-outline-light {
+        transition: all 0.3s ease;
+    }
+
+    .btn-light:hover, .btn-outline-light:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5 {
+        letter-spacing: -0.02em;
     }
 </style>
 
-<div class="container mt-4 mb-5">
-    <!-- Welcome Banner -->
-    <div class="welcome-banner p-5 mb-5 text-white position-relative overflow-hidden">
-        <div class="position-relative" style="z-index: 2;">
-            <div class="row align-items-center">
-                <div class="col-lg-7">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div style="font-size: 60px;">🌟</div>
-                        <div>
-                            <h1 class="display-4 fw-bold mb-2">Welcome back, {{ user_full_name }}!</h1>
-                            <p class="lead mb-0 opacity-90">Track your habits, build streaks, and stay consistent.</p>
+<div class="fullscreen-app">
+    <div class="main-content">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner text-white position-relative overflow-hidden">
+            <div class="position-relative" style="z-index: 2;">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+                        <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                            <div style="font-size: 55px;">🌟</div>
+                            <div>
+                                <h1 class="display-4 fw-bold mb-2">Welcome back, {{ user_full_name }}!</h1>
+                                <p class="lead mb-0 opacity-90">Track your habits, build streaks, and stay consistent.</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <span class="badge-modern" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
+                                    🔥 {{ available_tasks|length }} Active
+                                </span>
+                                <span class="badge-modern" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
+                                    ⚡ {{ due_today_tasks|length }} Due Today
+                                </span>
+                                <span class="badge-modern" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
+                                    📅 {{ upcoming_tasks|length }} Upcoming
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div class="d-flex gap-2 flex-wrap">
-                            <span class="badge-modern" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
-                                🔥 {{ available_tasks|length }} Active
-                            </span>
-                            <span class="badge-modern" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
-                                ⚡ {{ due_today_tasks|length }} Due Today
-                            </span>
-                            <span class="badge-modern" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);">
-                                📅 {{ upcoming_tasks|length }} Upcoming
-                            </span>
+                    <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
+                        <div class="d-flex gap-3 flex-wrap justify-content-lg-end">
+                            <a href="{% url 'habit_creation' %}" class="btn btn-light btn-lg rounded-pill px-5 fw-bold shadow-sm">
+                                <i class="bi bi-plus-circle-fill me-2"></i>+ Add Habit
+                            </a>
+                            <a href="{% url 'active_habits' %}" class="btn btn-outline-light btn-lg rounded-pill px-4">
+                                <i class="bi bi-grid-3x3-gap-fill me-2"></i>Habit Manager
+                            </a>
+                            <a href="{% url 'HabitsAnalysis' %}" class="btn btn-outline-light btn-lg rounded-pill px-4">
+                                <i class="bi bi-graph-up me-2"></i>Analytics
+                            </a>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
-                    <div class="d-flex gap-3 flex-wrap justify-content-lg-end">
-                        <a href="{% url 'habit_creation' %}" class="btn btn-light btn-lg rounded-pill px-5 fw-bold shadow-sm">
-                            <i class="bi bi-plus-circle-fill me-2"></i>+ Add Habit
-                        </a>
-                        <a href="{% url 'active_habits' %}" class="btn btn-outline-light btn-lg rounded-pill px-4">
-                            <i class="bi bi-grid-3x3-gap-fill me-2"></i>Habit Manager
-                        </a>
-                        <a href="{% url 'HabitsAnalysis' %}" class="btn btn-outline-light btn-lg rounded-pill px-4">
-                            <i class="bi bi-graph-up me-2"></i>Analytics
-                        </a>
+            </div>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card card p-3 text-center h-100">
+                    <div class="stat-icon mx-auto mb-2" style="background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);">
+                        <i class="bi bi-calendar-check text-primary" style="font-size: 28px;"></i>
                     </div>
+                    <h3 class="fw-bold mb-1">{{ due_today_tasks|length }}</h3>
+                    <p class="text-muted mb-0 small">Tasks Due Today</p>
+                    {% if due_today_tasks %}
+                        <small class="text-danger mt-1">
+                            <i class="bi bi-exclamation-triangle"></i> Urgent
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card card p-3 text-center h-100">
+                    <div class="stat-icon mx-auto mb-2" style="background: linear-gradient(135deg, #11998e20 0%, #38ef7d20 100%);">
+                        <i class="bi bi-play-circle-fill text-success" style="font-size: 28px;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">{{ available_tasks|length }}</h3>
+                    <p class="text-muted mb-0 small">Active Tasks</p>
+                    <small class="text-muted mt-1">In Progress</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card card p-3 text-center h-100">
+                    <div class="stat-icon mx-auto mb-2" style="background: linear-gradient(135deg, #fa709a20 0%, #fee14020 100%);">
+                        <i class="bi bi-calendar-range text-warning" style="font-size: 28px;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">{{ upcoming_tasks|length }}</h3>
+                    <p class="text-muted mb-0 small">Upcoming Tasks</p>
+                    <small class="text-muted mt-1">Scheduled</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card card p-3 text-center h-100">
+                    <div class="stat-icon mx-auto mb-2" style="background: linear-gradient(135deg, #f093fb20 0%, #f5576c20 100%);">
+                        <i class="bi bi-trophy-fill text-danger" style="font-size: 28px;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">{{ current_streak }}</h3>
+                    <p class="text-muted mb-0 small">Current Streak</p>
+                    <small class="text-muted mt-1">Keep going! 🔥</small>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Stats Dashboard -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-3 col-6">
-            <div class="stat-card card p-3 text-center h-100">
-                <div class="stat-icon mx-auto mb-3" style="background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);">
-                    <i class="bi bi-calendar-check text-primary" style="font-size: 30px;"></i>
-                </div>
-                <h3 class="fw-bold mb-1">{{ due_today_tasks|length }}</h3>
-                <p class="text-muted mb-0">Tasks Due Today</p>
-                {% if due_today_tasks %}
-                    <small class="text-danger mt-2">
-                        <i class="bi bi-exclamation-triangle"></i> Urgent
-                    </small>
-                {% endif %}
+        <!-- Modern Tabs -->
+        <div class="d-flex justify-content-center">
+            <div class="glass-tabs d-flex justify-content-center flex-wrap">
+                <button id="daily-tasks-button" class="tab-btn active" onclick="showTasks('daily')">
+                    <i class="bi bi-calendar-day me-2"></i>Due Today
+                    {% if due_today_tasks %}
+                        <span class="ms-2 bg-danger text-white rounded-pill px-2 py-1 small">{{ due_today_tasks|length }}</span>
+                    {% endif %}
+                </button>
+                <button id="weekly-tasks-button" class="tab-btn" onclick="showTasks('weekly')">
+                    <i class="bi bi-play-circle-fill me-2"></i>Active
+                    {% if available_tasks %}
+                        <span class="ms-2 bg-primary text-white rounded-pill px-2 py-1 small">{{ available_tasks|length }}</span>
+                    {% endif %}
+                </button>
+                <button id="upcoming-tasks-button" class="tab-btn" onclick="showTasks('upcoming')">
+                    <i class="bi bi-calendar-week-fill me-2"></i>Upcoming
+                    {% if upcoming_tasks %}
+                        <span class="ms-2 bg-secondary text-white rounded-pill px-2 py-1 small">{{ upcoming_tasks|length }}</span>
+                    {% endif %}
+                </button>
             </div>
         </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card card p-3 text-center h-100">
-                <div class="stat-icon mx-auto mb-3" style="background: linear-gradient(135deg, #11998e20 0%, #38ef7d20 100%);">
-                    <i class="bi bi-play-circle-fill text-success" style="font-size: 30px;"></i>
-                </div>
-                <h3 class="fw-bold mb-1">{{ available_tasks|length }}</h3>
-                <p class="text-muted mb-0">Active Tasks</p>
-                <small class="text-muted mt-2">In Progress</small>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card card p-3 text-center h-100">
-                <div class="stat-icon mx-auto mb-3" style="background: linear-gradient(135deg, #fa709a20 0%, #fee14020 100%);">
-                    <i class="bi bi-calendar-range text-warning" style="font-size: 30px;"></i>
-                </div>
-                <h3 class="fw-bold mb-1">{{ upcoming_tasks|length }}</h3>
-                <p class="text-muted mb-0">Upcoming Tasks</p>
-                <small class="text-muted mt-2">Scheduled</small>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card card p-3 text-center h-100">
-                <div class="stat-icon mx-auto mb-3" style="background: linear-gradient(135deg, #f093fb20 0%, #f5576c20 100%);">
-                    <i class="bi bi-trophy-fill text-danger" style="font-size: 30px;"></i>
-                </div>
-                <h3 class="fw-bold mb-1">0</h3>
-                <p class="text-muted mb-0">Current Streak</p>
-                <small class="text-muted mt-2">Keep going! 🔥</small>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modern Tabs -->
-    <div class="glass-tabs d-flex justify-content-center mb-4 flex-wrap">
-        <button id="daily-tasks-button" class="tab-btn active" onclick="showTasks('daily')">
-            <i class="bi bi-calendar-day me-2"></i>Due Today
+        <!-- Daily Tasks -->
+        <div id="daily-tasks" class="task-container">
             {% if due_today_tasks %}
-                <span class="ms-2 bg-danger text-white rounded-pill px-2 py-1 small">{{ due_today_tasks|length }}</span>
+                <div class="task-grid">
+                    {% for task in due_today_tasks %}
+                        <div class="task-card task-card-urgent p-4">
+                            <div class="card-body-content">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h4 class="fw-bold mb-1">{{ task.habit.name }}</h4>
+                                        <span class="badge-modern bg-danger text-white">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Due Today!
+                                        </span>
+                                    </div>
+                                    <div class="timer-badge">
+                                        <i class="bi bi-clock-history"></i>
+                                        {{ task.due_date|date:"g:i A" }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period.capitalize }} Habit
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
+                                        </small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-danger" style="width: 75%;" role="progressbar"></div>
+                                    </div>
+                                </div>
+                                
+                                <p class="mb-3 small">
+                                    <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                    Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+                                </p>
+                                
+                                <form method="post" action="{% url 'habit-home' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                                    <input type="hidden" name="habit_id" value="{{ task.habit.id }}">
+                                    <input type="hidden" name="task_status" value="Completed">
+                                    <button type="submit" class="complete-btn btn w-100 text-white">
+                                        <i class="bi bi-check2-circle me-2"></i>Mark as Complete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div style="font-size: 70px; margin-bottom: 15px;">🎉</div>
+                    <h3 class="fw-bold mb-2">No tasks due today!</h3>
+                    <p class="text-muted mb-3">You're all caught up. Great job!</p>
+                    <a href="{% url 'habit_creation' %}" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-plus-circle me-2"></i>+ Add Habit
+                    </a>
+                </div>
             {% endif %}
-        </button>
-        <button id="weekly-tasks-button" class="tab-btn" onclick="showTasks('weekly')">
-            <i class="bi bi-play-circle-fill me-2"></i>Active
+        </div>
+
+        <!-- Active Tasks -->
+        <div id="weekly-tasks" style="display: none;" class="task-container">
             {% if available_tasks %}
-                <span class="ms-2 bg-primary text-white rounded-pill px-2 py-1 small">{{ available_tasks|length }}</span>
+                <div class="task-grid">
+                    {% for task in available_tasks %}
+                        <div class="task-card task-card-active p-4">
+                            <div class="card-body-content">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h4 class="fw-bold mb-1">{{ task.habit.name }}</h4>
+                                        <span class="badge-modern bg-primary text-white">
+                                            <i class="bi bi-play-fill me-1"></i>Active
+                                        </span>
+                                    </div>
+                                    <div class="timer-badge">
+                                        <i class="bi bi-calendar-check"></i>
+                                        {{ task.due_date|date:"M d" }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period.capitalize }} Habit
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
+                                        </small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" style="width: 50%;" role="progressbar"></div>
+                                    </div>
+                                </div>
+                                
+                                <p class="mb-3 small">
+                                    <i class="bi bi-hourglass-split me-2 text-warning"></i>
+                                    Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+                                </p>
+                                
+                                <form method="post" action="{% url 'habit-home' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                                    <input type="hidden" name="habit_id" value="{{ task.habit.id }}">
+                                    <input type="hidden" name="task_status" value="Completed">
+                                    <button type="submit" class="complete-btn btn w-100 text-white">
+                                        <i class="bi bi-check2-circle me-2"></i>Mark as Complete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div style="font-size: 70px;">📭</div>
+                    <h3 class="fw-bold mb-2">No Active Tasks</h3>
+                    <p class="text-muted mb-3">You don't have any active tasks right now.</p>
+                    <a href="{% url 'habit_creation' %}" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-plus-circle me-2"></i>Create a Habit
+                    </a>
+                </div>
             {% endif %}
-        </button>
-        <button id="upcoming-tasks-button" class="tab-btn" onclick="showTasks('upcoming')">
-            <i class="bi bi-calendar-week-fill me-2"></i>Upcoming
+        </div>
+
+        <!-- Upcoming Tasks -->
+        <div id="upcoming-tasks" style="display: none;" class="task-container">
             {% if upcoming_tasks %}
-                <span class="ms-2 bg-secondary text-white rounded-pill px-2 py-1 small">{{ upcoming_tasks|length }}</span>
+                <div class="task-grid">
+                    {% for task in upcoming_tasks %}
+                        <div class="task-card task-card-upcoming p-4">
+                            <div class="card-body-content">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h4 class="fw-bold mb-1">{{ task.habit.name }}</h4>
+                                        <span class="badge-modern bg-secondary text-white">
+                                            <i class="bi bi-calendar-plus me-1"></i>Upcoming
+                                        </span>
+                                    </div>
+                                    <div class="timer-badge">
+                                        <i class="bi bi-clock"></i>
+                                        {{ task.due_date|date:"M d" }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period.capitalize }} Habit
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <p class="mb-2 small">
+                                    <i class="bi bi-play-circle me-2 text-success"></i>
+                                    Start: {{ task.start_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+                                </p>
+                                <p class="mb-3 small">
+                                    <i class="bi bi-flag me-2 text-danger"></i>
+                                    Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+                                </p>
+                                
+                                {% if task.habit.notes %}
+                                    <div class="alert alert-light rounded-3 p-2 mb-0 small">
+                                        <i class="bi bi-pencil-square me-2"></i>
+                                        <small>{{ task.habit.notes }}</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div style="font-size: 70px;">📅</div>
+                    <h3 class="fw-bold mb-2">No Upcoming Tasks</h3>
+                    <p class="text-muted">Check back later for new tasks!</p>
+                </div>
             {% endif %}
-        </button>
-    </div>
-
-    <!-- Daily Tasks -->
-    <div id="daily-tasks" class="task-container">
-        {% if due_today_tasks %}
-            <div class="task-grid">
-                {% for task in due_today_tasks %}
-                    <div class="task-card task-card-urgent p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h4 class="fw-bold mb-1">{{ task.habit.name }}</h4>
-                                <span class="badge-modern bg-danger text-white">
-                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Due Today!
-                                </span>
-                            </div>
-                            <div class="timer-badge">
-                                <i class="bi bi-clock-history"></i>
-                                {{ task.due_date|date:"g:i A" }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period.capitalize }} Habit
-                                </small>
-                                <small class="text-muted">
-                                    <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
-                                </small>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-danger" style="width: 75%;" role="progressbar"></div>
-                            </div>
-                        </div>
-                        
-                        <p class="mb-3">
-                            <i class="bi bi-calendar3 me-2 text-primary"></i>
-                            Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
-                        </p>
-                        
-                        <form method="post" action="{% url 'habit-home' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="task_id" value="{{ task.id }}">
-                            <input type="hidden" name="habit_id" value="{{ task.habit.id }}">
-                            <input type="hidden" name="task_status" value="Completed">
-                            <button type="submit" class="complete-btn btn w-100 text-white">
-                                <i class="bi bi-check2-circle me-2"></i>Mark as Complete
-                            </button>
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <div style="font-size: 80px; margin-bottom: 20px;">🎉</div>
-                <h3 class="fw-bold mb-3">No tasks due today!</h3>
-                <p class="text-muted mb-4">You're all caught up. Great job!</p>
-                <a href="{% url 'habit_creation' %}" class="btn btn-primary btn-lg rounded-pill px-5">
-                    <i class="bi bi-plus-circle me-2"></i>+ Add Habit
-                </a>
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- Active Tasks -->
-    <div id="weekly-tasks" style="display: none;" class="task-container">
-        {% if available_tasks %}
-            <div class="task-grid">
-                {% for task in available_tasks %}
-                    <div class="task-card task-card-active p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h4 class="fw-bold mb-1">{{ task.habit.name }}</h4>
-                                <span class="badge-modern bg-primary text-white">
-                                    <i class="bi bi-play-fill me-1"></i>Active
-                                </span>
-                            </div>
-                            <div class="timer-badge">
-                                <i class="bi bi-calendar-check"></i>
-                                {{ task.due_date|date:"M d" }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period.capitalize }} Habit
-                                </small>
-                                <small class="text-muted">
-                                    <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
-                                </small>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-primary" style="width: 50%;" role="progressbar"></div>
-                            </div>
-                        </div>
-                        
-                        <p class="mb-3">
-                            <i class="bi bi-hourglass-split me-2 text-warning"></i>
-                            Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
-                        </p>
-                        
-                        <form method="post" action="{% url 'habit-home' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="task_id" value="{{ task.id }}">
-                            <input type="hidden" name="habit_id" value="{{ task.habit.id }}">
-                            <input type="hidden" name="task_status" value="Completed">
-                            <button type="submit" class="complete-btn btn w-100 text-white">
-                                <i class="bi bi-check2-circle me-2"></i>Mark as Complete
-                            </button>
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <div style="font-size: 80px;">📭</div>
-                <h3 class="fw-bold mb-3">No Active Tasks</h3>
-                <p class="text-muted">You don't have any active tasks right now.</p>
-                <a href="{% url 'habit_creation' %}" class="btn btn-primary mt-3 rounded-pill px-4">
-                    <i class="bi bi-plus-circle me-2"></i>Create a Habit
-                </a>
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- Upcoming Tasks -->
-    <div id="upcoming-tasks" style="display: none;" class="task-container">
-        {% if upcoming_tasks %}
-            <div class="task-grid">
-                {% for task in upcoming_tasks %}
-                    <div class="task-card task-card-upcoming p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h4 class="fw-bold mb-1">{{ task.habit.name }}</h4>
-                                <span class="badge-modern bg-secondary text-white">
-                                    <i class="bi bi-calendar-plus me-1"></i>Upcoming
-                                </span>
-                            </div>
-                            <div class="timer-badge">
-                                <i class="bi bi-clock"></i>
-                                {{ task.due_date|date:"M d" }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period.capitalize }} Habit
-                                </small>
-                                <small class="text-muted">
-                                    <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
-                                </small>
-                            </div>
-                        </div>
-                        
-                        <p class="mb-2">
-                            <i class="bi bi-play-circle me-2 text-success"></i>
-                            Start: {{ task.start_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
-                        </p>
-                        <p class="mb-3">
-                            <i class="bi bi-flag me-2 text-danger"></i>
-                            Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
-                        </p>
-                        
-                        {% if task.habit.notes %}
-                            <div class="alert alert-light rounded-3 p-3 mb-0">
-                                <i class="bi bi-pencil-square me-2"></i>
-                                <small>{{ task.habit.notes }}</small>
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <div style="font-size: 80px;">📅</div>
-                <h3 class="fw-bold mb-3">No Upcoming Tasks</h3>
-                <p class="text-muted">Check back later for new tasks!</p>
-            </div>
-        {% endif %}
+        </div>
     </div>
 </div>
 
@@ -631,7 +795,7 @@
         // Animate cards in
         const cards = document.querySelectorAll(`#${period}-tasks .task-card`);
         cards.forEach((card, index) => {
-            card.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.1}s`;
+            card.style.animation = `fadeInUp 0.4s ease forwards ${index * 0.05}s`;
             card.style.opacity = '0';
         });
     }

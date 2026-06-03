@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import HabitForm
 from .models import TaskTracker, Habit, Streak, Achievement
+from django.db.models import Max
 from .analytics import (
     due_today_tasks, active_tasks, upcoming_tasks,
     calculate_progress, longest_current_streak_over_all_habits,
@@ -60,12 +61,17 @@ class HabitView(View):
             user_full_name = full_name.split()[0].capitalize()
         else:
             user_full_name = user.username.capitalize()
-
+        current_streak = Streak.objects.filter(
+            habit__user=request.user
+        ).aggregate(Max('current_streak'))['current_streak__max'] or 0
         context = {
+        
             'upcoming_tasks': upcoming_task,
             'due_today_tasks': today_tasks,
             'available_tasks': active_task,
-            'user_full_name': user_full_name
+            'user_full_name': user_full_name,
+            'current_streak': current_streak,
+            
         }
 
         return render(request, 'home.html', context)
