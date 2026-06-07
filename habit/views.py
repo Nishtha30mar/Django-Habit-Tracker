@@ -6,9 +6,9 @@ from django.utils import timezone
 from django.core import serializers
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db.models import Count, Q, Sum, Avg, Max, Min, F
 from .forms import HabitForm
 from .models import TaskTracker, Habit, Streak, Achievement
-from django.db.models import Max
 from .analytics import (
     due_today_tasks, active_tasks, upcoming_tasks,
     calculate_progress, longest_current_streak_over_all_habits,
@@ -16,6 +16,7 @@ from .analytics import (
     longest_streak_over_all_habits, num_inprogress_tasks,
     update_user_activity, rank_habits, all_completed_habits
 )
+
 
 class HabitView(View):
     """
@@ -122,7 +123,6 @@ class HabitView(View):
 
         # If an error occurs or the task is not found, redirect to habit home page
         return redirect('habit-home')
-
 
 
 class HabitManagerView(View):
@@ -341,26 +341,26 @@ class HabitManagerView(View):
             'habit': habit,
             'tasks': tasks,
             'streak': streak,
-            'achievement' : achievement
+            'achievement': achievement
         }
 
         return render(request, 'habit_details.html', context)
 
 
-
 class HabitAnalysis(View):
     """
-    View class for managing habits.
+    View class for handling habit analysis and analytics dashboard.
 
-    This class provides methods for handling habit analysis.
+    This class provides methods for displaying analytics and insights about user habits.
 
     Methods
     -------
     get(request, *args, **kwargs)
-        Handles GET requests for habit analysis.
+        Handles GET requests for habit analysis dashboard.
     post(request, *args, **kwargs)
         Handles POST requests for habit analysis.
     """
+    
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
@@ -368,109 +368,241 @@ class HabitAnalysis(View):
 
     def get(self, request, *args, **kwargs):
         """
-        Handles GET requests for habit analysis.
-
-        Retrieves habit data for the user and renders the analysis template.
+        Handles GET requests for habit analysis dashboard.
+        
+        Displays analytics dashboard with charts and statistics about user habits.
 
         Parameters
         ----------
         request : HttpRequest
             The HTTP request.
-        *args : tuple
-            Variable length argument list.
-        **kwargs : dict
-            Arbitrary keyword arguments.
 
         Returns
         -------
         HttpResponse
-            Rendered analysis template with habit data.
+            Rendered analysis template with analytics data.
         """
-
-        user_id = request.user.id
-
-        # Retrieve all tracked habits and filter them by period
-        all_habits = all_tracked_habits(user_id=user_id)
-        daily_habits = habits_by_period('daily')(all_habits)
-        weekly_habits = habits_by_period('weekly')(all_habits)
-        monthly_habits = habits_by_period('monthly')(all_habits)
-
-        #retrieve completed habits
+        user = request.user
+        user_id = user.id
+        
+        # Get all habits for the current user (active and completed)
+        all_habits = Habit.objects.filter(user=user)
+        total_habits = all_habits.count()
+        
+        # Initialize data structures for charts
+        habit_names = []
+        completed_tasks_per_habit = []
+        failed_tasks_per_habit = []
+        current_streaks_list = []
+        longest_streaks_list = []
+        completion_percentages = []
+        
+        # Track for best/worst habits
+        habit_completion_data = {}
+        habit_streak_data = {}
+        
+        for habit in all_habits:
+            habit_names.append(habit.name)
+            
+            # Get task statistics for this habit
+            completed_tasks = TaskTracker.objects.filter(
+                habit=habit, 
+                task_status='Completed'
+            ).count()
+            
+            failed_tasks = TaskTracker.objects.filter(
+                habit=habit, 
+                task_status='Failed'
+            ).count()
+            
+            completed_tasks_per_habit.append(completed_tasks)
+            failed_tasks_per_habit.append(failed_tasks)
+            
+            # Calculate completion percentage
+            total_tasks = completed_tasks + failed_tasks
+            if total_tasks > 0:
+                completion_pct = round((completed_tasks / total_tasks) * 100, 1)
+            else:
+                completion_pct = 0
+            completion_percentages.append(completion_pct)
+            
+            # Get streak information
+            streak = Streak.objects.filter(habit=habit).first()
+            if streak:
+                current_streak = streak.current_streak
+                longest_streak = streak.longest_streak
+            else:
+                current_streak = 0
+                longest_streak = 0
+                
+            current_streaks_list.append(current_streak)
+            longest_streaks_list.append(longest_streak)
+            
+            # Store for best/worst calculations
+            habit_completion_data[habit.name] = {
+                'completed': completed_tasks,
+                'failed': failed_tasks,
+                'percentage': completion_pct,
+                'total_tasks': total_tasks
+            }
+            
+            habit_streak_data[habit.name] = {
+                'current': current_streak,
+                'longest': longest_streak
+            }
+        
+        # Calculate overall statistics
+        total_completed_tasks = TaskTracker.objects.filter(
+            habit__user=user, 
+            task_status='Completed'
+        ).count()
+        
+        total_failed_tasks = TaskTracker.objects.filter(
+            habit__user=user, 
+            task_status='Failed'
+        ).count()
+        
+        total_tasks_all = total_completed_tasks + total_failed_tasks
+        
+        if total_tasks_all > 0:
+            overall_completion_percentage = round(
+                (total_completed_tasks / total_tasks_all) * 100, 1
+            )
+        else:
+            overall_completion_percentage = 0
+        
+        # Find best current streak
+        best_current_streak = max(current_streaks_list) if current_streaks_list else 0
+        
+        # Find longest streak overall
+        longest_streak_overall = max(longest_streaks_list) if longest_streaks_list else 0
+        
+        # Find most consistent habit (highest completion percentage with at least 3 tasks)
+        consistent_habits = [
+            (name, data['percentage']) 
+            for name, data in habit_completion_data.items() 
+            if data['total_tasks'] >= 3
+        ]
+        if consistent_habits:
+            most_consistent_habit = max(consistent_habits, key=lambda x: x[1])[0]
+            most_consistent_percentage = max([p for _, p in consistent_habits])
+        else:
+            most_consistent_habit = "N/A"
+            most_consistent_percentage = 0
+        
+        # Find most struggled habit (highest failed count)
+        struggled_habits = [
+            (name, data['failed']) 
+            for name, data in habit_completion_data.items()
+        ]
+        if struggled_habits and max([f for _, f in struggled_habits]) > 0:
+            most_struggled_habit = max(struggled_habits, key=lambda x: x[1])[0]
+            most_struggled_fails = max([f for _, f in struggled_habits])
+        else:
+            most_struggled_habit = "N/A"
+            most_struggled_fails = 0
+        
+        # Prepare data for Chart.js - use json.dumps for safe rendering
+        charts_data = {
+            'habit_names': json.dumps(habit_names),
+            'completed_tasks': json.dumps(completed_tasks_per_habit),
+            'failed_tasks': json.dumps(failed_tasks_per_habit),
+            'current_streaks': json.dumps(current_streaks_list),
+            'longest_streaks': json.dumps(longest_streaks_list),
+            'completion_percentages': json.dumps(completion_percentages),
+        }
+        
+        # Keep existing analytics data for backward compatibility
+        all_tracked = all_tracked_habits(user_id=user_id)
+        daily_habits = habits_by_period('daily')(all_tracked)
+        weekly_habits = habits_by_period('weekly')(all_tracked)
+        monthly_habits = habits_by_period('monthly')(all_tracked)
+        
+        # Retrieve completed habits
         completed_habits = all_completed_habits(user_id)
-
+        
         # Retrieve the habit with the current longest streak
         longest_current_all_streak = longest_current_streak_over_all_habits()
+        
         # Retrieve the habit with longest streak
         longest_all_streak = longest_streak_over_all_habits()
-
+        
+        # Calculate progress for existing analytics
+        calculate_progress(all_tracked)
+        calculate_progress(daily_habits)
+        calculate_progress(weekly_habits)
+        calculate_progress(monthly_habits)
+        calculate_progress(longest_all_streak)
+        calculate_progress(longest_current_all_streak)
+        
+        # Weight configuration for rank_habits
         weights = {
             'completed_tasks': -0.2,
             'failed_tasks': 0.8,
             'longest_streak': -0.2,
             'current_streak': -0.1
         }
-
+        
         daily_struggled_most = rank_habits(weights, 'daily')
         weekly_struggled_most = rank_habits(weights, 'weekly')
-
-        print(weekly_struggled_most)
-        calculate_progress(all_habits)
-        calculate_progress(daily_habits)
-        calculate_progress(weekly_habits)
-        calculate_progress(monthly_habits)
-        calculate_progress(longest_all_streak)
-        calculate_progress(longest_current_all_streak)
-
+        
         context = {
-            'all_habits': all_habits,
+            # New analytics dashboard data
+            'charts_data': charts_data,
+            'total_habits': total_habits,
+            'total_completed_tasks': total_completed_tasks,
+            'total_failed_tasks': total_failed_tasks,
+            'overall_completion_percentage': overall_completion_percentage,
+            'best_current_streak': best_current_streak,
+            'longest_streak': longest_streak_overall,
+            'most_consistent_habit': most_consistent_habit,
+            'most_consistent_percentage': most_consistent_percentage,
+            'most_struggled_habit': most_struggled_habit,
+            'most_struggled_fails': most_struggled_fails,
+            'has_habits': total_habits > 0,
+            
+            # Keep existing data for backward compatibility
+            'all_habits': all_tracked,
             'daily_habits': daily_habits,
             'weekly_habits': weekly_habits,
             'monthly_habits': monthly_habits,
-            'daily_struggled_most' : daily_struggled_most,
-            'weekly_struggled_most' : weekly_struggled_most,
+            'daily_struggled_most': daily_struggled_most,
+            'weekly_struggled_most': weekly_struggled_most,
             'longest_all_streak': longest_all_streak,
             'longest_current_all_streak': longest_current_all_streak,
             'completed_habits': completed_habits
         }
-
+        
         return render(request, 'analysis.html', context)
 
     def post(self, request, *args, **kwargs):
         """
         Handles POST requests for habit analysis.
-
+        
         Retrieves selected habit data and its related streak information.
 
         Parameters
         ----------
         request : HttpRequest
             The HTTP request.
-        *args : tuple
-            Variable length argument list.
-        **kwargs : dict
-            Arbitrary keyword arguments.
 
         Returns
         -------
         JsonResponse
             JSON response containing habit data with related streak information.
-
-        Notes
-        -----
-        The ID of the selected habit is obtained from the request payload.
         """
         selected_value = request.POST.get('selectedValue')
-
+        
         # Retrieve the habit object with related streak using prefetch_related
         habit = Habit.objects.prefetch_related('streak').get(id=selected_value)
-
+        
         # Serialize the habit object along with related streak data
         habit_data = serializers.serialize('json', [habit])
-
+        
         # Convert serialized data to Python dictionary
         habit_dict = json.loads(habit_data)[0]['fields']
-
+        
         # Add streak data to habit dictionary
         habit_dict['streak'] = list(habit.streak.values())
-
+        
         return JsonResponse(habit_dict, safe=False)

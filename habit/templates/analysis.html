@@ -1,348 +1,801 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-    <h1 class="my-4">Habits Analysis</h1>
-    <!-- Dropdown for selecting period -->
-    <div class="mb-4">
-        <select class="form-select" onchange="showHabits(this.value)">
-            <option value="all">All tracked habits</option>
-            <option value="completed">Completed habits</option>
-            <option value="daily">Daily habits</option>
-            <option value="weekly">Weekly habits</option>
-            <option value="monthly">Monthly habits</option>
-            <option value="d-struggled-most">Daily Habit struggled most last month</option>
-            <option value="w-struggled-most">Weekly Habit struggled most last month</option>
-            <option value="longest-streak">Longest run streak over all defined habits</option>
-            <option value="longest-current-streak">Longest current streak over all defined habits</option>
-            <option value="habit-longest-streak">Longest Streak for Habit:</option>
+<style>
+    /* Override base.html container margins - FULLSCREEN */
+    .container, .container-fluid {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+    
+    /* Fullscreen Analytics Dashboard */
+    .analytics-dashboard {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px 40px 40px 40px;
+        margin: 0;
+    }
+
+    /* Custom Scrollbar */
+    .analytics-dashboard::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .analytics-dashboard::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .analytics-dashboard::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 10px;
+    }
+
+    /* Header Section - Full Width */
+    .analytics-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 40px 30px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        width: 100%;
+    }
+
+    .analytics-header h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #fff, #a8c0ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 15px;
+    }
+
+    .analytics-header p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.2rem;
+    }
+
+    /* Dropdown Styling - Full Width Container */
+    .dropdown-container {
+        width: 100%;
+        margin-bottom: 40px;
+    }
+
+    .analytics-dropdown {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 50px;
+        padding: 15px 25px;
+        border: none;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .analytics-dropdown:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Metrics Grid - Full Width */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+        width: 100%;
+    }
+
+    .metric-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .metric-icon {
+        font-size: 45px;
+        margin-bottom: 15px;
+    }
+
+    .metric-value {
+        font-size: 42px;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .metric-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Chart Cards - Full Width Grid */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+        margin-bottom: 40px;
+        width: 100%;
+    }
+
+    .chart-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+    }
+
+    .chart-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .chart-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #667eea;
+        display: inline-block;
+        color: #333;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 350px;
+        width: 100%;
+    }
+
+    /* Insights Grid - Full Width */
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        width: 100%;
+    }
+
+    .insight-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .insight-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .insight-icon {
+        font-size: 40px;
+        margin-bottom: 15px;
+    }
+
+    .insight-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0.8;
+        margin-bottom: 10px;
+    }
+
+    .insight-value {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        word-break: break-word;
+    }
+
+    .insight-sub {
+        font-size: 13px;
+        opacity: 0.9;
+    }
+
+    /* Content Sections (Dropdown Results) */
+    .content-section {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 30px;
+        width: 100%;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 25px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* Habit Cards Grid inside sections */
+    .habits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        width: 100%;
+    }
+
+    .habit-card-insight {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .habit-card-insight:hover {
+        transform: translateY(-3px);
+    }
+
+    .habit-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .habit-detail {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 8px;
+    }
+
+    .btn-view {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 8px 20px;
+        border-radius: 50px;
+        color: white;
+        margin-top: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-view:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+
+    /* Habit Detail Card */
+    .habit-detail-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        text-align: center;
+    }
+
+    /* Back to Top Button */
+    .back-to-top {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 1000;
+        border: none;
+    }
+
+    .back-to-top:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        .analytics-dashboard {
+            padding: 20px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .analytics-dashboard {
+            padding: 15px;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+        }
+        
+        .chart-wrapper {
+            height: 280px;
+        }
+        
+        .analytics-header h1 {
+            font-size: 2rem;
+        }
+        
+        .insights-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .habits-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-in {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+</style>
+
+<div class="analytics-dashboard">
+    <!-- Header -->
+    <div class="analytics-header animate-in">
+        <h1>
+            <i class="bi bi-graph-up me-3"></i>Analytics Dashboard
+        </h1>
+        <p>Deep insights into your habit tracking journey</p>
+    </div>
+
+    <!-- Dropdown Section -->
+    <div class="dropdown-container text-center animate-in" style="animation-delay: 0.05s">
+        <select class="analytics-dropdown" onchange="showHabits(this.value)">
+            <option value="all">📊 All Tracked Habits</option>
+            <option value="completed">✅ Completed Habits</option>
+            <option value="daily">📅 Daily Habits</option>
+            <option value="weekly">📆 Weekly Habits</option>
+            <option value="monthly">📈 Monthly Habits</option>
+            <option value="d-struggled-most">⚠️ Daily Struggled Most</option>
+            <option value="w-struggled-most">⚠️ Weekly Struggled Most</option>
+            <option value="longest-streak">🏆 Longest Run Streak</option>
+            <option value="longest-current-streak">🔥 Longest Current Streak</option>
+            <option value="habit-longest-streak">📊 Longest Streak for Habit</option>
         </select>
     </div>
 
-    <!-- Dropdown for selecting habit (hidden by default) -->
-    <div id="habit-dropdown" class="mb-4 d-none">
-        <select class="form-select" id="habit-select">
-            <option value="" selected disabled>Choose a habit</option>
+    <!-- Hidden Habit Dropdown -->
+    <div id="habit-dropdown-container" class="dropdown-container text-center" style="display: none;">
+        <select class="analytics-dropdown" id="habit-select">
+            <option value="" selected disabled>🎯 Choose a habit</option>
             {% for habit in all_habits %}
-                <option value="{{ habit.id }}">{{ habit.name }} ({{ habit.period }})</option>
+                <option value="{{ habit.id }}">{{ habit.name|capfirst }} ({{ habit.period }})</option>
             {% endfor %}
         </select>
     </div>
-      
-    <div class="container">
-        <div class="row">
-            <div class="col-md-11">
-                <!-- Display All Habits -->
-                <div id="all-active-habits">
-                    <div class="row">
-                        {% for habit in all_habits %}
-                            {% include 'analysis_card.html' %}
-                        {% endfor %}
-                    </div>
-                </div>
-                <!-- Display Daily Habits -->
-                <div id="daily-active-habits" style="display: none;">
-                    <div class="row">
-                        {% for habit in daily_habits %}
-                            {% include 'analysis_card.html' %}
-                        {% endfor %}
-                    </div>
-                </div>
-                <!-- Display Weekly Habits -->
-                <div id="weekly-active-habits" style="display: none;">
-                    <div class="row">
-                        {% for habit in weekly_habits %}
-                            {% include 'analysis_card.html' %}
-                        {% endfor %}
-                    </div>
-                </div>
-                <!-- Display Monthly Habits -->
-                <div id="monthly-active-habits" style="display: none;">
-                    <div class="row">
-                        {% for habit in monthly_habits %}
-                            {% include 'analysis_card.html' %}
-                        {% endfor %}
-                    </div>
-                </div>
-                <!-- Display Most Struggled Daily Habit -->
-                <div id="d-struggled-most-active-habits" style="display: none;">
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card streak-card">
-                                <div class="card-body d-flex flex-column">
-                                    {% if daily_struggled_most %}
-                                        <h4 class="card-title">{{ daily_struggled_most.0.0.name }}</h4>
-                                        {% with streak=daily_struggled_most.0.0.streak.first %}
-                                            <div class="streak-info">
-                                                <div class="streak-label">Failed Tasks</div>
-                                                <div class="streak-value">
-                                                    {% if streak and streak.num_of_failed_tasks %}
-                                                        {{ streak.num_of_failed_tasks }}
-                                                    {% else %}
-                                                        0
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            <div class="streak-info">
-                                                <div class="streak-label">Longest Streak</div>
-                                                <div class="streak-value">
-                                                    {% if streak %}
-                                                        {{ streak.longest_streak }}
-                                                    {% else %}
-                                                        0
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% endwith %}
-                                        {% with habit=daily_struggled_most.0.0 %}
-                                            <a class="btn btn-text btn-block mt-1" href="{% url 'habit_detail' habit_id=habit.id %}">More Details</a>
-                                        {% endwith %}   
-                                    {% else %}
-                                        <p>No daily struggled habit available.</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div> 
-                <!-- Display Most Struggled Weekly Habit -->
-                <div id="w-struggled-most-active-habits" style="display: none;">
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card streak-card">
-                                <div class="card-body d-flex flex-column">
-                                    {% if weekly_struggled_most and weekly_struggled_most|length > 0 %}
-                                        <h4 class="card-title">{{ weekly_struggled_most.0.0.name }}</h4>
-                                        {% with streak=weekly_struggled_most.0.0.streak.first %}
-                                            <div class="streak-info">
-                                                <div class="streak-label">Failed Tasks</div>
-                                                <div class="streak-value">
-                                                    {% if streak and streak.num_of_failed_tasks %}
-                                                        {{ streak.num_of_failed_tasks }}
-                                                    {% else %}
-                                                        0
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            <div class="streak-info">
-                                                <div class="streak-label">Longest Streak</div>
-                                                <div class="streak-value">
-                                                    {% if streak %}
-                                                        {{ streak.longest_streak }}
-                                                    {% else %}
-                                                        0
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% endwith %}
-                                        {% with habit=weekly_struggled_most.0.0 %}
-                                            <a class="btn btn-text btn-block mt-1" href="{% url 'habit_detail' habit_id=habit.id %}">More Details</a>
-                                        {% endwith %}                                
-                                    {% else %}
-                                        <p>No weekly struggled habit available.</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>                
-                <!-- Display Longest Streak -->
-                <div id="longest-streak-active-habits" style="display: none;">
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card streak-card">
-                                <div class="card-body d-flex flex-column">
-                                    {% if longest_all_streak %}
-                                        {% for habit in longest_all_streak %}
-                                        <h4 class="card-title">{{ habit.name.capitalize }}</h4>
-                                            {% with streak=habit.streak.first %}
-                                                <div class="streak-info">
-                                                    <div class="streak-label">Current Streak</div>
-                                                    <div class="streak-value">{{ streak.current_streak }}</div>
-                                                </div>
-                                                <div class="streak-info">
-                                                    <div class="streak-label">Longest Streak</div>
-                                                    <div class="streak-value">{{ streak.longest_streak }}</div>
-                                                </div>
-                                            {% endwith %}
-                                            <a class="btn btn-text btn-block mt-1" href="{% url 'habit_detail' habit_id=habit.id %}">More Details</a>
-                                        {% endfor %}
-                                    {% else %}
-                                        <p>No streak data available.</p>
-                                    {% endif %}             
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Display Longest Current Streak -->
-                <div id="longest-current-streak-active-habits" style="display: none;">
-                    <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="card streak-card">
-                                    <div class="card-body d-flex flex-column">
-                                        {% if longest_current_all_streak %}
-                                            {% for habit in longest_current_all_streak %}
-                                                <h4 class="card-title" >{{ habit.name }}</h4>
-                                                    {% with streak=habit.streak.first %}
-                                                        <div class="streak-info">
-                                                            <div class="streak-label">Current Streak</div>
-                                                            <div class="streak-value">{{ streak.current_streak }}</div>
-                                                        </div>
-                                                        <div class="streak-info">
-                                                            <div class="streak-label">Longest Streak</div>
-                                                            <div class="streak-value">{{ streak.longest_streak }}</div>
-                                                        </div>
-                                                    {% endwith %}
-                                                <a class="btn btn-text btn-block mt-1" href="{% url 'habit_detail' habit_id=habit.id %}">More Details</a>
-                                            {% endfor %}
-                                        {% else %}
-                                            <p>No streak data available.</p>
-                                        {% endif %}  
-                                    </div>  
-                                </div>
-                            </div>
-                    </div>
-                </div>
-            </div>
-            <div id="completed-active-habits" style="display: none;">
-                <div class="row">
-                    {% for habit in completed_habits %}
-                        {% with streak=habit.streak.first %}
-                        <div class="col-md-6 mb-4">
-                            <div class="card completed-card">
-                                <div class="card-body d-flex flex-column">
-                                    <h4 class="card-title">{{ habit.name }}</h4>
-                                    <h6 class="card-subtitle text-muted text-center">{{ habit.period.capitalize }} Habit</h6>
-                                    <div class="completed-info-line">
-                                        <div class="completed-info-column">
-                                            <div class="completed-label">Total Tasks</div>
-                                            <div class="completed-value">{{ habit.num_of_tasks }}</div> 
-                                            <div class="completed-label">Completed</div>
-                                            <div class="completed-value">{{ streak.num_of_completed_tasks }}</div> 
-                                        </div>
-                                        <div class="vertical-line"></div>
-                                        <div class="completed-info-column">
-                                            <div class="completed-label">Top Streak</div>
-                                            <div class="completed-value">{{ streak.longest_streak }}</div>
-                                            <div class="completed-label">Failed</div>
-                                            <div class="completed-value">{{ streak.num_of_failed_tasks }}</div> 
-                                        </div>
-                                    </div>
-                                </div>
-                                <a class="btn btn-text btn-block mt-1" href="{% url 'habit_detail' habit_id=habit.id %}">More Details</a>
-                            </div>
-                        </div>
-                        {% endwith %}
-                    {% endfor %}
-                </div>                               
-            </div>
+
+    <!-- Metrics Overview (Always visible when there are habits) -->
+    {% if all_habits %}
+    <div class="metrics-grid animate-in" style="animation-delay: 0.1s">
+        <div class="metric-card">
+            <div class="metric-icon">📊</div>
+            <div class="metric-value">{{ all_habits|length }}</div>
+            <div class="metric-label">Active Habits</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">✅</div>
+            <div class="metric-value">{{ total_completed_tasks|default:0 }}</div>
+            <div class="metric-label">Completed Tasks</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">❌</div>
+            <div class="metric-value">{{ total_failed_tasks|default:0 }}</div>
+            <div class="metric-label">Failed Tasks</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">📈</div>
+            <div class="metric-value">{{ overall_completion_percentage|default:0 }}%</div>
+            <div class="metric-label">Success Rate</div>
         </div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-11">
-                <!-- Habit Cards -->
-                <div id="habit-cards">
-                    <div class="row">
-                        <!-- Habit cards will be dynamically added here -->
-                    </div>
-                </div>
+
+    <!-- Charts Section - Full Width Grid -->
+    <div class="charts-grid animate-in" style="animation-delay: 0.15s">
+        <div class="chart-card">
+            <div class="chart-title">
+                <i class="bi bi-bar-chart-steps me-2"></i>Task Completion by Habit
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="completionChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">
+                <i class="bi bi-lightning-charge me-2"></i>Current Streaks
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="streaksChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">
+                <i class="bi bi-pie-chart-fill me-2"></i>Overall Distribution
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">
+                <i class="bi bi-percent me-2"></i>Success Rate by Habit
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="successRateChart"></canvas>
             </div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var habitSelect = document.getElementById('habit-select');
-            if (habitSelect) {
-                habitSelect.addEventListener('change', function() {
-                    var selectedValue = this.value;
-                    console.log("Selected habit ID:", selectedValue);
+    <!-- Insights Section -->
+    <div class="insights-grid animate-in" style="animation-delay: 0.2s">
+        <div class="insight-card">
+            <div class="insight-icon">⭐</div>
+            <div class="insight-label">Most Consistent</div>
+            <div class="insight-value">{{ most_consistent_habit|default:"N/A" }}</div>
+            <div class="insight-sub">{{ most_consistent_percentage|default:0 }}% success rate</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-icon">⚠️</div>
+            <div class="insight-label">Needs Improvement</div>
+            <div class="insight-value">{{ most_struggled_habit|default:"N/A" }}</div>
+            <div class="insight-sub">{{ most_struggled_fails|default:0 }} failed tasks</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-icon">🔥</div>
+            <div class="insight-label">Best Current Streak</div>
+            <div class="insight-value">{{ best_current_streak|default:0 }} days</div>
+            <div class="insight-sub">Keep going!</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-icon">🏆</div>
+            <div class="insight-label">All-Time Record</div>
+            <div class="insight-value">{{ longest_streak|default:0 }} days</div>
+            <div class="insight-sub">Longest streak ever</div>
+        </div>
+    </div>
+    {% endif %}
 
-                    // If the placeholder option is selected, do nothing
-                    if (!selectedValue) {
-                        console.log("No habit selected.");
-                        return;
-                    }
+    <!-- Dynamic Content Sections -->
+    <div id="all-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">📊 All Active Habits</h3>
+        <div class="habits-grid">
+            {% for habit in all_habits %}
+            <div class="habit-card-insight">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                <div class="habit-detail">{{ habit.period|capfirst }} • {{ habit.frequency }}x</div>
+                <div class="habit-detail">Progress: {{ habit.progress_percentage|default:0 }}%</div>
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No active habits found.</p>
+            {% endfor %}
+        </div>
+    </div>
 
-                    // Send an AJAX request to retrieve data
-                    $.ajax({
-                        url: '',
-                        method: 'POST',
-                        data: {
-                            selectedValue: selectedValue,
-                            csrfmiddlewaretoken: '{{ csrf_token }}'
-                        },
-                        success: function(data) {
-                            console.log("Data retrieved:", data);
+    <div id="daily-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">📅 Daily Habits</h3>
+        <div class="habits-grid">
+            {% for habit in daily_habits %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                <div class="habit-detail">Daily • {{ habit.frequency }}x/day</div>
+                <div class="habit-detail">Progress: {{ habit.progress_percentage|default:0 }}%</div>
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No daily habits found.</p>
+            {% endfor %}
+        </div>
+    </div>
 
-                            if (data && data.streak && data.streak.length > 0) {
-                                var habitContainer = document.getElementById('habit-cards');
-                                habitContainer.innerHTML = ''; 
-                                // Display data on card
-                                var card = document.createElement('div');
-                                card.classList.add('col-md-6', 'mb-4');
-                                card.innerHTML = `
-                                    <div class="card streak-card">
-                                        <div class="card-body">
-                                            <h4 class="card-title">${data.name}</h4>
-                                            <div class="streak-info">
-                                                <div class="streak-label">Current Streak</div>
-                                                <div class="streak-value">${data.streak[0].current_streak}</div>
-                                            </div>
-                                            <div class="streak-info">
-                                                <div class="streak-label">Longest Streak</div>
-                                                <div class="streak-value">${data.streak[0].longest_streak}</div>
-                                            </div>
-                                            <a class="btn btn-text btn-block mt-1" href="/Habit-Infos/${selectedValue}/">More Details</a>
-                                        </div>
-                                    </div>
-                                `;
-                                habitContainer.appendChild(card);
-                            } else {
-                                console.error("Invalid data format or empty streak array:", data);
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error:", error);
-                        }
-                    });
-                });
-            }
+    <div id="weekly-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">📆 Weekly Habits</h3>
+        <div class="habits-grid">
+            {% for habit in weekly_habits %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                <div class="habit-detail">Weekly • {{ habit.frequency }}x/week</div>
+                <div class="habit-detail">Progress: {{ habit.progress_percentage|default:0 }}%</div>
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No weekly habits found.</p>
+            {% endfor %}
+        </div>
+    </div>
 
-            var habitDropdown = document.getElementById('habit-dropdown');
-            if (habitDropdown) {
-                habitDropdown.classList.remove('d-none');
-            }
-        });
+    <div id="monthly-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">📈 Monthly Habits</h3>
+        <div class="habits-grid">
+            {% for habit in monthly_habits %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                <div class="habit-detail">Monthly • {{ habit.frequency }}x/month</div>
+                <div class="habit-detail">Progress: {{ habit.progress_percentage|default:0 }}%</div>
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No monthly habits found.</p>
+            {% endfor %}
+        </div>
+    </div>
 
-        function showHabits(period) {
-            if (period === 'habit-longest-streak') {
-                document.getElementById('habit-dropdown').classList.remove('d-none');
-                document.getElementById('habit-cards').classList.remove('d-none');
-            } else {
-                document.getElementById('habit-dropdown').classList.add('d-none');
-                document.getElementById('habit-cards').classList.add('d-none');
-            }
+    <div id="completed-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">✅ Completed Habits</h3>
+        <div class="habits-grid">
+            {% for habit in completed_habits %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                <div class="habit-detail">Completed! 🎉</div>
+                {% with streak=habit.streak.first %}
+                <div class="habit-detail">Longest Streak: {{ streak.longest_streak|default:0 }} days</div>
+                {% endwith %}
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No completed habits yet.</p>
+            {% endfor %}
+        </div>
+    </div>
 
-            // Hide all habit sections
-            var sections = [
-                'all-active-habits', 'daily-active-habits', 'weekly-active-habits',
-                'monthly-active-habits', 'd-struggled-most-active-habits',
-                'w-struggled-most-active-habits', 'longest-streak-active-habits',
-                'longest-current-streak-active-habits', 'completed-active-habits'
-            ];
+    <div id="d-struggled-most-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">⚠️ Most Struggled Daily Habit</h3>
+        <div class="habits-grid">
+            {% if daily_struggled_most %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                <div class="habit-name">{{ daily_struggled_most.0.0.name|capfirst }}</div>
+                {% with streak=daily_struggled_most.0.0.streak.first %}
+                <div class="habit-detail">Failed Tasks: {{ streak.num_of_failed_tasks|default:0 }}</div>
+                <div class="habit-detail">Longest Streak: {{ streak.longest_streak|default:0 }} days</div>
+                {% endwith %}
+                <a href="{% url 'habit_detail' habit_id=daily_struggled_most.0.0.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% else %}
+            <p style="color: white;">No data available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="w-struggled-most-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">⚠️ Most Struggled Weekly Habit</h3>
+        <div class="habits-grid">
+            {% if weekly_struggled_most %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                <div class="habit-name">{{ weekly_struggled_most.0.0.name|capfirst }}</div>
+                {% with streak=weekly_struggled_most.0.0.streak.first %}
+                <div class="habit-detail">Failed Tasks: {{ streak.num_of_failed_tasks|default:0 }}</div>
+                <div class="habit-detail">Longest Streak: {{ streak.longest_streak|default:0 }} days</div>
+                {% endwith %}
+                <a href="{% url 'habit_detail' habit_id=weekly_struggled_most.0.0.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% else %}
+            <p style="color: white;">No data available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="longest-streak-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">🏆 Longest Streak Overall</h3>
+        <div class="habits-grid">
+            {% for habit in longest_all_streak %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                {% with streak=habit.streak.first %}
+                <div class="habit-detail">Longest Streak: {{ streak.longest_streak|default:0 }} days</div>
+                <div class="habit-detail">Current Streak: {{ streak.current_streak|default:0 }} days</div>
+                {% endwith %}
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No streak data available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="longest-current-streak-active-habits" class="content-section" style="display: none;">
+        <h3 class="section-title">🔥 Longest Current Streak</h3>
+        <div class="habits-grid">
+            {% for habit in longest_current_all_streak %}
+            <div class="habit-card-insight" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+                <div class="habit-name">{{ habit.name|capfirst }}</div>
+                {% with streak=habit.streak.first %}
+                <div class="habit-detail">Current Streak: {{ streak.current_streak|default:0 }} days</div>
+                <div class="habit-detail">Longest Streak: {{ streak.longest_streak|default:0 }} days</div>
+                {% endwith %}
+                <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-view">View Details →</a>
+            </div>
+            {% empty %}
+            <p style="color: white;">No streak data available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Habit Detail Section -->
+    <div id="habit-detail-section" class="content-section" style="display: none;">
+        <div class="habit-detail-card" id="habit-detail-content"></div>
+    </div>
+</div>
+
+<!-- Back to Top Button -->
+<button class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+    <i class="bi bi-arrow-up fs-4"></i>
+</button>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    // Initialize charts when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if all_habits %}
+            // Prepare data for charts
+            const habitNames = [{% for habit in all_habits %}'{{ habit.name|capfirst }}',{% endfor %}];
+            const completedTasks = [{% for habit in all_habits %}{% with streak=habit.streak.first %}{{ streak.num_of_completed_tasks|default:0 }},{% endwith %}{% endfor %}];
+            const failedTasks = [{% for habit in all_habits %}{% with streak=habit.streak.first %}{{ streak.num_of_failed_tasks|default:0 }},{% endwith %}{% endfor %}];
+            const currentStreaks = [{% for habit in all_habits %}{% with streak=habit.streak.first %}{{ streak.current_streak|default:0 }},{% endwith %}{% endfor %}];
             
-            sections.forEach(function(section) {
-                document.getElementById(section).style.display = 'none';
+            // Calculate success rates
+            const successRates = habitNames.map((_, i) => {
+                const total = completedTasks[i] + failedTasks[i];
+                return total > 0 ? Math.round((completedTasks[i] / total) * 100) : 0;
             });
 
-            // Show the selected habit section
-            var selectedSection = document.getElementById(`${period}-active-habits`);
-            if (selectedSection) {
-                selectedSection.style.display = 'block';
-            }
+            // Chart 1: Task Completion
+            const ctx1 = document.getElementById('completionChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: habitNames,
+                    datasets: [
+                        { label: 'Completed', data: completedTasks, backgroundColor: 'rgba(17, 153, 142, 0.8)', borderRadius: 8 },
+                        { label: 'Failed', data: failedTasks, backgroundColor: 'rgba(245, 87, 108, 0.8)', borderRadius: 8 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Chart 2: Current Streaks
+            const ctx2 = document.getElementById('streaksChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: { labels: habitNames, datasets: [{ label: 'Current Streak (days)', data: currentStreaks, backgroundColor: 'rgba(102, 126, 234, 0.8)', borderRadius: 8 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Chart 3: Distribution
+            const totalCompleted = completedTasks.reduce((a, b) => a + b, 0);
+            const totalFailed = failedTasks.reduce((a, b) => a + b, 0);
+            const ctx3 = document.getElementById('distributionChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'doughnut',
+                data: { labels: ['Completed Tasks', 'Failed Tasks'], datasets: [{ data: [totalCompleted, totalFailed], backgroundColor: ['rgba(17, 153, 142, 0.8)', 'rgba(245, 87, 108, 0.8)'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+            });
+
+            // Chart 4: Success Rate
+            const ctx4 = document.getElementById('successRateChart').getContext('2d');
+            new Chart(ctx4, {
+                type: 'line',
+                data: { labels: habitNames, datasets: [{ label: 'Success Rate (%)', data: successRates, borderColor: '#667eea', backgroundColor: 'rgba(102, 126, 234, 0.1)', borderWidth: 3, fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        {% endif %}
+
+        // Setup habit dropdown AJAX
+        const habitSelect = document.getElementById('habit-select');
+        if (habitSelect) {
+            habitSelect.addEventListener('change', function() {
+                const selectedValue = this.value;
+                if (!selectedValue) return;
+
+                $.ajax({
+                    url: '',
+                    method: 'POST',
+                    data: { selectedValue: selectedValue, csrfmiddlewaretoken: '{{ csrf_token }}' },
+                    success: function(data) {
+                        if (data && data.streak && data.streak.length > 0) {
+                            const detailSection = document.getElementById('habit-detail-section');
+                            const detailContent = document.getElementById('habit-detail-content');
+                            detailContent.innerHTML = `
+                                <div class="insight-icon" style="font-size: 50px;">📊</div>
+                                <div class="insight-label" style="color: rgba(255,255,255,0.8); font-size: 14px;">Habit Details</div>
+                                <div class="insight-value" style="font-size: 32px; margin: 15px 0;">${data.name || 'Habit'}</div>
+                                <div class="insight-sub mt-3">Current Streak: ${data.streak[0].current_streak} days</div>
+                                <div class="insight-sub">Longest Streak: ${data.streak[0].longest_streak} days</div>
+                                <div class="insight-sub">Completed: ${data.streak[0].num_of_completed_tasks || 0}</div>
+                                <div class="insight-sub">Failed: ${data.streak[0].num_of_failed_tasks || 0}</div>
+                                <a class="btn btn-light mt-4 rounded-pill" href="/Habit-Infos/${selectedValue}/">View Full Details →</a>
+                            `;
+                            detailSection.style.display = 'block';
+                            detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error:", error);
+                    }
+                });
+            });
+        }
+    });
+
+    // Show/Hide sections based on dropdown selection
+    function showHabits(period) {
+        // Hide all sections
+        const sections = ['all-active-habits', 'daily-active-habits', 'weekly-active-habits', 'monthly-active-habits', 'd-struggled-most-active-habits', 'w-struggled-most-active-habits', 'longest-streak-active-habits', 'longest-current-streak-active-habits', 'completed-active-habits', 'habit-detail-section'];
+        sections.forEach(section => {
+            const el = document.getElementById(section);
+            if (el) el.style.display = 'none';
+        });
+
+        // Show/hide habit dropdown
+        const habitDropdown = document.getElementById('habit-dropdown-container');
+        if (period === 'habit-longest-streak') {
+            if (habitDropdown) habitDropdown.style.display = 'block';
+        } else {
+            if (habitDropdown) habitDropdown.style.display = 'none';
         }
 
-    </script>
+        // Show selected section
+        const selectedSection = document.getElementById(`${period}-active-habits`);
+        if (selectedSection) {
+            selectedSection.style.display = 'block';
+            selectedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+</script>
 {% endblock %}
