@@ -80,24 +80,12 @@ class HabitView(View):
     def post(self, request, *args, **kwargs):
         """
         Handles POST requests for completing tasks.
-
-        Parameters
-        ----------
-        request : HttpRequest
-            The HTTP request.
-
-        Returns
-        -------
-        HttpResponse
-            The HTTP response.
         """
-
         task_id = request.POST.get('task_id')
         habit_id = request.POST.get('habit_id')
 
         task = get_object_or_404(TaskTracker, id=task_id)
         habit = get_object_or_404(Habit, id=habit_id)
-        streak = get_object_or_404(Streak, habit_id=habit_id)
 
         try:
             # Update Task table
@@ -105,23 +93,17 @@ class HabitView(View):
             task.task_completion_date = timezone.now()
             task.save()
 
-            # Update streak and number of completed tasks in Streak and Habit tables
-            if task.task_status == 'Completed':
-                streak.current_streak += 1
-                streak.num_of_completed_tasks += 1
-                Achievement.rewards_streaks(habit_id, streak)
+            # Update streak using the corrected method
+            streak = Streak.update_streak_on_completion(habit_id)
+            
+            # Check for achievements
+            Achievement.rewards_streaks(habit_id, streak)
 
-                habit.save()
-                streak.save()
-
-                # messages.success(request, f' {habit.name} Task marked as done')
-
-                return redirect('habit-home')
+            return redirect('habit-home')
 
         except TaskTracker.DoesNotExist:
             pass
 
-        # If an error occurs or the task is not found, redirect to habit home page
         return redirect('habit-home')
 
 
@@ -259,7 +241,6 @@ class HabitManagerView(View):
         if request.method == 'POST':
             try:
                 habit.delete()
-                # messages.success(request, f"{habit.name} Habit deleted successfully")
                 return redirect('active_habits')
             except Habit.DoesNotExist:
                 pass            
@@ -296,7 +277,6 @@ class HabitManagerView(View):
 
 
         # Calculate progress percentage for each active habit
-        # based on (num_complted + num_failed)/num_of_tasks
         calculate_progress(all_active_habits)
         calculate_progress(daily_habits)
         calculate_progress(weekly_habits)
@@ -313,40 +293,71 @@ class HabitManagerView(View):
     @staticmethod
     def habit_detail(request, habit_id):
         """
-        View function to display all habit information (streaks, tasks, achievments) 
-        for a given habit_id. including tables for Tasks jornal and Streak log
+        Display detailed information about a habit:
+        - task log
+        - streak data
+        - achievements
+        - task counts
 
-        Parameters
-        ----------
-        request : HttpRequest
-            The HTTP request.
-        habit_id : int
-            The ID of the habit to display information for.
-
-        Returns
-        -------
-        HttpResponse
-            The HTTP response.
+        This version recalculates streaks from actual completed/failed tasks
+        before showing the page.
         """
+
         if not request.user.is_authenticated:
             return redirect('login')
 
-        habit = get_object_or_404(Habit, pk=habit_id)
-        tasks = TaskTracker.objects.filter(habit_id=habit_id)
-        streak = Streak.objects.get(habit_id=habit_id)
-        achievement = Achievement.objects.filter(habit_id=habit_id)
+        habit = get_object_or_404(Habit, pk=habit_id, user=request.user)
+
+        tasks = TaskTracker.objects.filter(
+            habit_id=habit_id
+        ).order_by('task_number')
+
+        # Recalculate streak from actual task statuses
+        streak = Streak.sync_streak_with_tasks(habit_id)
+
+        achievement = Achievement.objects.filter(
+            habit_id=habit_id
+        ).order_by('-date')
+
         num_inprogress_tasks(habit)
+
+        completed_count = tasks.filter(task_status='Completed').count()
+        failed_count = tasks.filter(task_status='Failed').count()
+        in_progress_count = tasks.filter(task_status='In progress').count()
+
+        total_finished_tasks = completed_count + failed_count
+
+        if total_finished_tasks > 0:
+            success_rate = round((completed_count / total_finished_tasks) * 100, 1)
+        else:
+            success_rate = 0
+
+        # Debugging output in terminal
+        print("\n===== HABIT DETAIL DEBUG =====")
+        print("Habit:", habit.name)
+        print("Tasks:")
+        for task in tasks:
+            print(f"Task #{task.task_number}: {task.task_status}")
+        print("Completed:", completed_count)
+        print("Failed:", failed_count)
+        print("In Progress:", in_progress_count)
+        print("Current Streak:", streak.current_streak)
+        print("Longest Streak:", streak.longest_streak)
+        print("==============================\n")
 
         context = {
             'habit': habit,
             'tasks': tasks,
             'streak': streak,
-            'achievement': achievement
+            'achievement': achievement,
+            'completed_count': completed_count,
+            'failed_count': failed_count,
+            'in_progress_count': in_progress_count,
+            'success_rate': success_rate,
+            'total_tasks': tasks.count(),
         }
 
         return render(request, 'habit_details.html', context)
-
-
 class HabitAnalysis(View):
     """
     View class for handling habit analysis and analytics dashboard.
@@ -386,7 +397,7 @@ class HabitAnalysis(View):
         user_id = user.id
         
         # Get all habits for the current user (active and completed)
-        all_habits = Habit.objects.filter(user=user)
+        all_habits = all_tracked_habits(user_id=user_id)
         total_habits = all_habits.count()
         
         # Initialize data structures for charts
@@ -426,8 +437,8 @@ class HabitAnalysis(View):
                 completion_pct = 0
             completion_percentages.append(completion_pct)
             
-            # Get streak information
-            streak = Streak.objects.filter(habit=habit).first()
+            # Get streak information - sync first to ensure accuracy
+            streak = Streak.sync_streak_with_tasks(habit.id)
             if streak:
                 current_streak = streak.current_streak
                 longest_streak = streak.longest_streak

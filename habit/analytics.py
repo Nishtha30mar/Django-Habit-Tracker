@@ -381,20 +381,27 @@ def extract_first_failed_task(updated_task_ids):
 def update_user_activity(user_id):
     """
     Update user activity including tasks, achievements, and streaks.
-
-    Parameters
-    ----------
-    user_id : int
-        The ID of the user whose activity is to be updated.
-
-    Returns
-    -------
-    None
+    
+    This function:
+    1. Updates overdue tasks to 'Failed' status
+    2. Updates streak information (resets current streak, increments failed count)
+    3. Creates achievements for broken streaks
     """
-    updated_habit_tasks_ids = TaskTracker.update_failed_tasks(user_id=user_id)
-    updated_habit_ids, updated_task_ids = updated_habit_tasks_ids
+    # Update tasks statuses from in progress to failed and get their ids
+    updated_habit_ids, updated_task_ids = TaskTracker.update_failed_tasks(user_id=user_id)
+    
+    if updated_habit_ids:
+        # Update streak for failed tasks (this resets current streak and increments failed count)
+        Streak.update_streak_on_failure(updated_habit_ids)
+        
+        # Get the first failed task for each habit to identify streak breaks
+        first_failed_tasks = extract_first_failed_task(updated_task_ids)
+        
+        # Update achievements for broken streaks
+        Achievement.update_achievements(first_failed_tasks)
 
-    first_failed_tasks = extract_first_failed_task(updated_task_ids)
-
-    Achievement.update_achievements(first_failed_tasks)
-    Streak.update_streak(updated_habit_ids)
+def completed_tasks_history(user_id):
+    return TaskTracker.objects.filter(
+        habit__user_id=user_id,
+        task_status='Completed'
+    ).order_by('-task_completion_date')
