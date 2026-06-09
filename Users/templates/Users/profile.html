@@ -2,27 +2,517 @@
 {% load static %}
 
 {% block content %}
-    <div class="container mt-3">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card add-habit-card">
-                    <h1 class="card-header text-center">User Profile</h1>
-                    <div class="card-body">
-                        <p><i class="bi bi-person"></i> <strong>Full Name:</strong> {{ profile.user.first_name }} {{ profile.user.last_name }}</p>
-                        {% if profile.email %}
-                            <p><i class="bi bi-envelope"></i> <strong>Email:</strong> {{ profile.email }}</p>
-                        {% endif %}
-                        <p><i class="bi bi-calendar"></i> <strong>Joined:</strong> {{ profile.user.date_joined | date:"D, d M Y H:i:s" }}</p>
+<style>
+    /* Fullscreen Profile Page */
+    .profile-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        overflow-y: auto;
+        padding: 40px;
+        margin: 0;
+    }
 
-                        <div class="form-group row">
-                            <div class="col-sm-7 offset-sm-1">
-                                <a class="btn btn-primary btn-block" href="{% url 'habit-home' %}">Back to Habit Dashboard</a>
+    /* Custom Scrollbar */
+    .profile-fullscreen::-webkit-scrollbar {
+        width: 8px;
+    }
 
-                            </div>
+    .profile-fullscreen::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    .profile-fullscreen::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 10px;
+    }
+
+    /* Profile Card */
+    .profile-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        animation: fadeInUp 0.5s ease;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Card Header */
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px;
+        text-align: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 10s ease infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    /* Avatar */
+    .avatar-circle {
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(10px);
+        border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .avatar-circle i {
+        font-size: 50px;
+        color: white;
+    }
+
+    .profile-header h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .profile-header .user-email {
+        opacity: 0.9;
+        margin-bottom: 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Edit Button */
+    .edit-profile-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 8px 20px;
+        border-radius: 50px;
+        color: white;
+        font-size: 0.85rem;
+        margin-top: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 2;
+    }
+
+    .edit-profile-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    /* Card Body */
+    .profile-body {
+        padding: 35px;
+    }
+
+    /* Edit Form */
+    .edit-form {
+        display: none;
+        background: #f8f9fa;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+        animation: fadeInUp 0.3s ease;
+    }
+
+    .edit-form.show {
+        display: block;
+    }
+
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+
+    .form-label-custom {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control-custom {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        border: none;
+        padding: 12px 25px;
+        border-radius: 50px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+    }
+
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 50px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-left: 10px;
+    }
+
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    /* Info Section */
+    .info-section {
+        margin-bottom: 30px;
+    }
+
+    .info-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #667eea;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+
+    .info-item:hover {
+        background: #f8f9fa;
+        padding-left: 10px;
+        border-radius: 10px;
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea15, #764ba215);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+
+    .info-icon i {
+        font-size: 20px;
+        color: #667eea;
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .btn-dashboard {
+        flex: 1;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        padding: 12px 20px;
+        border-radius: 50px;
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    /* Alert Messages */
+    .alert {
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        animation: fadeInUp 0.3s ease;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .profile-fullscreen {
+            padding: 20px;
+        }
+        
+        .profile-header {
+            padding: 30px 20px;
+        }
+        
+        .profile-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .profile-body {
+            padding: 25px;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .avatar-circle i {
+            font-size: 40px;
+        }
+    }
+</style>
+
+<div class="profile-fullscreen">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="avatar-circle">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <h1 id="displayName">{{ user.get_full_name|default:user.username }}</h1>
+            <p class="user-email">
+                <i class="bi bi-envelope me-1"></i> {{ user.email }}
+            </p>
+            <button class="edit-profile-btn" onclick="toggleEditForm()">
+                <i class="bi bi-pencil-square me-1"></i> Edit Profile
+            </button>
+        </div>
+        
+        <div class="profile-body">
+            <!-- Edit Form -->
+            <div id="editForm" class="edit-form">
+                <form method="post" action="{% url 'profile' %}">
+                    {% csrf_token %}
+                    <div class="form-group-custom">
+                        <label class="form-label-custom">
+                            <i class="bi bi-person me-1"></i> First Name
+                        </label>
+                        <input type="text" name="first_name" class="form-control-custom" value="{{ user.first_name }}" placeholder="Enter your first name">
+                    </div>
+                    <div class="form-group-custom">
+                        <label class="form-label-custom">
+                            <i class="bi bi-person me-1"></i> Last Name
+                        </label>
+                        <input type="text" name="last_name" class="form-control-custom" value="{{ user.last_name }}" placeholder="Enter your last name">
+                    </div>
+                    <div class="form-group-custom">
+                        <button type="submit" class="btn-save">
+                            <i class="bi bi-check-lg me-1"></i> Save Changes
+                        </button>
+                        <button type="button" class="btn-cancel" onclick="toggleEditForm()">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Alert Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Personal Information Section -->
+            <div class="info-section">
+                <div class="info-title">
+                    <i class="bi bi-person-badge me-2"></i>Personal Information
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Full Name</div>
+                        <div class="info-value" id="fullNameValue">
+                            {% if user.get_full_name %}
+                                {{ user.get_full_name }}
+                            {% else %}
+                                <span class="text-muted">Not set - Click Edit Profile to add</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-envelope"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Email Address</div>
+                        <div class="info-value">{{ user.email }}</div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Username</div>
+                        <div class="info-value">{{ user.username }}</div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-calendar"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Joined Date</div>
+                        <div class="info-value">{{ user.date_joined|date:"l, F d, Y" }} at {{ user.date_joined|date:"g:i A" }}</div>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Last Login</div>
+                        <div class="info-value">
+                            {% if user.last_login %}
+                                {{ user.last_login|date:"l, F d, Y" }} at {{ user.last_login|date:"g:i A" }}
+                            {% else %}
+                                <span class="text-muted">First login</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{% url 'habit-home' %}" class="btn-dashboard">
+                    <i class="bi bi-speedometer2"></i> Go to Dashboard
+                </a>
+                <a href="{% url 'habit_creation' %}" class="btn-dashboard" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+                    <i class="bi bi-plus-circle"></i> Create New Habit
+                </a>
+            </div>
+            
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="bi bi-shield-check"></i> Your data is secure with us
+                </small>
+            </div>
         </div>
     </div>
+</div>
+
+<script>
+    function toggleEditForm() {
+        const editForm = document.getElementById('editForm');
+        if (editForm) {
+            editForm.classList.toggle('show');
+        }
+    }
+
+    // Close edit form if user clicks outside
+    document.addEventListener('click', function(event) {
+        const editForm = document.getElementById('editForm');
+        const editButton = document.querySelector('.edit-profile-btn');
+        
+        if (editForm && editForm.classList && editForm.classList.contains('show')) {
+            if (!editForm.contains(event.target) && editButton && !editButton.contains(event.target)) {
+                editForm.classList.remove('show');
+            }
+        }
+    });
+</script>
 {% endblock %}

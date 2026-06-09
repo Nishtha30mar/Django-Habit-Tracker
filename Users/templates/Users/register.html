@@ -1,82 +1,415 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-9 ">
-            <div class="card add-habit-card">
-                <h2 class="card-header text-center">Sign up</h2>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
+<style>
+    /* Fullscreen Register Page */
+    .register-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        overflow-y: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 20px;
+    }
 
-                        <div class="form-group row">
-                            <label for="{{ form.username.id_for_label }}" class="col-sm-4 col-form-label text-right">Username:</label>
-                            <div class="col-sm-8">
-                                {{ form.username }}
-                                {% for error in form.username.errors %}
-                                    <small class="text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        </div>
+    /* Custom Scrollbar */
+    .register-fullscreen::-webkit-scrollbar {
+        width: 8px;
+    }
 
-                        <div class="form-group row">
-                            <label for="{{ form.first_name.id_for_label }}" class="col-sm-4 col-form-label text-right">First name:</label>
-                            <div class="col-sm-8">
-                                {{ form.first_name }}
-                                {% for error in form.first_name.errors %}
-                                    <small class="text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        </div>
+    .register-fullscreen::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
 
-                        <div class="form-group row">
-                            <label for="{{ form.last_name.id_for_label }}" class="col-sm-4 col-form-label text-right">Last name:</label>
-                            <div class="col-sm-8">
-                                {{ form.last_name }}
-                                {% for error in form.last_name.errors %}
-                                    <small class="text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        </div>
+    .register-fullscreen::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+    }
 
-                        <div class="form-group row">
-                            <label for="{{ form.email.id_for_label }}" class="col-sm-4 col-form-label text-right">Email:</label>
-                            <div class="col-sm-8">
-                                {{ form.email }}
-                                {% for error in form.email.errors %}
-                                    <small class="text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        </div>
+    /* Register Card */
+    .register-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        animation: fadeInUp 0.5s ease;
+        max-width: 550px;
+        width: 100%;
+        margin: 40px auto;
+    }
 
-                        <div class="form-group row">
-                            <label for="{{ form.password1.id_for_label }}" class="col-sm-4 col-form-label text-right">Password:</label>
-                            <div class="col-sm-8">
-                                {{ form.password1 }}
-                                {% for error in form.password1.errors %}
-                                    <small class="text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        </div>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-                        <div class="form-group row">
-                            <label for="{{ form.password2.id_for_label }}" class="col-sm-4 col-form-label text-right">confirm Password :</label>
-                            <div class="col-sm-8">
-                                {{ form.password2 }}
-                                {% for error in form.password2.errors %}
-                                    <small class="text-danger">{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-sm-6 offset-sm-4">
-                            <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center">
-                    <p class="mt-3">Already have an account? <a href="{% url 'login' %}">Sign in here</a>.</p>
-                </div>
+    /* Card Header */
+    .register-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 35px 30px;
+        text-align: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .register-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 10s ease infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    .register-icon {
+        width: 70px;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(10px);
+        border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .register-icon i {
+        font-size: 35px;
+        color: white;
+    }
+
+    .register-header h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .register-header p {
+        opacity: 0.9;
+        margin-bottom: 0;
+        position: relative;
+        z-index: 2;
+        font-size: 0.9rem;
+    }
+
+    /* Card Body */
+    .register-body {
+        padding: 30px;
+    }
+
+    /* Form Groups */
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+
+    .form-label-custom {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.85rem;
+    }
+
+    .form-label-custom i {
+        color: #667eea;
+        margin-right: 8px;
+        width: 20px;
+    }
+
+    .input-group-custom {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        color: #aaa;
+        z-index: 1;
+        font-size: 1rem;
+    }
+
+    .form-control-custom {
+        width: 100%;
+        padding: 12px 15px 12px 42px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-custom:hover {
+        border-color: #c3cfe2;
+    }
+
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Password Hint */
+    .password-hint {
+        font-size: 0.7rem;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .password-hint i {
+        font-size: 0.7rem;
+        margin-right: 3px;
+    }
+
+    /* Submit Button */
+    .btn-register {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(17, 153, 142, 0.4);
+    }
+
+    .btn-register:active {
+        transform: translateY(0);
+    }
+
+    /* Footer */
+    .register-footer {
+        background: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .register-footer p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .register-footer a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .register-footer a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    /* Error Messages */
+    .error-message {
+        color: #dc3545;
+        font-size: 0.75rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    /* Two Column Layout for Name Fields */
+    .two-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .register-card {
+            max-width: 95%;
+            margin: 20px auto;
+        }
+        
+        .register-header {
+            padding: 25px 20px;
+        }
+        
+        .register-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .register-body {
+            padding: 25px 20px;
+        }
+        
+        .register-icon {
+            width: 55px;
+            height: 55px;
+        }
+        
+        .register-icon i {
+            font-size: 28px;
+        }
+        
+        .two-columns {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+        
+        .form-control-custom {
+            padding: 10px 12px 10px 38px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<div class="register-fullscreen">
+    <div class="register-card">
+        <div class="register-header">
+            <div class="register-icon">
+                <i class="bi bi-person-plus-fill"></i>
             </div>
+            <h2>Create Account</h2>
+            <p>Join Habit Tracker and start building better habits</p>
+        </div>
+        
+        <div class="register-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Username Field -->
+                <div class="form-group-custom">
+                    <label class="form-label-custom">
+                        <i class="bi bi-person"></i> Username
+                    </label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-person input-icon"></i>
+                        <input type="text" name="username" class="form-control-custom" placeholder="Choose a username" value="{{ form.username.value|default:'' }}" autofocus>
+                    </div>
+                    {% for error in form.username.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                    <div class="password-hint">
+                        <i class="bi bi-info-circle"></i> Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+                    </div>
+                </div>
+
+                <!-- First and Last Name - Two Columns -->
+                <div class="two-columns">
+                    <div class="form-group-custom">
+                        <label class="form-label-custom">
+                            <i class="bi bi-person-badge"></i> First Name
+                        </label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-person input-icon"></i>
+                            <input type="text" name="first_name" class="form-control-custom" placeholder="First name" value="{{ form.first_name.value|default:'' }}">
+                        </div>
+                        {% for error in form.first_name.errors %}
+                            <small class="error-message">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group-custom">
+                        <label class="form-label-custom">
+                            <i class="bi bi-person-badge"></i> Last Name
+                        </label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-person input-icon"></i>
+                            <input type="text" name="last_name" class="form-control-custom" placeholder="Last name" value="{{ form.last_name.value|default:'' }}">
+                        </div>
+                        {% for error in form.last_name.errors %}
+                            <small class="error-message">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Email Field -->
+                <div class="form-group-custom">
+                    <label class="form-label-custom">
+                        <i class="bi bi-envelope"></i> Email Address
+                    </label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-envelope input-icon"></i>
+                        <input type="email" name="email" class="form-control-custom" placeholder="your@email.com" value="{{ form.email.value|default:'' }}">
+                    </div>
+                    {% for error in form.email.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group-custom">
+                    <label class="form-label-custom">
+                        <i class="bi bi-lock"></i> Password
+                    </label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-key input-icon"></i>
+                        <input type="password" name="password1" class="form-control-custom" placeholder="Create a password">
+                    </div>
+                    {% for error in form.password1.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                    <div class="password-hint">
+                        <i class="bi bi-shield-check"></i> Your password must contain at least 8 characters and can't be too common.
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="form-group-custom">
+                    <label class="form-label-custom">
+                        <i class="bi bi-lock-fill"></i> Confirm Password
+                    </label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-key input-icon"></i>
+                        <input type="password" name="password2" class="form-control-custom" placeholder="Confirm your password">
+                    </div>
+                    {% for error in form.password2.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-register">
+                    <i class="bi bi-person-plus-fill me-2"></i> Create Account
+                </button>
+            </form>
+        </div>
+        
+        <div class="register-footer">
+            <p>Already have an account? <a href="{% url 'login' %}">Sign in here</a></p>
         </div>
     </div>
+</div>
 {% endblock %}

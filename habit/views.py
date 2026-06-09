@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.core import serializers
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum, Avg, Max, Min, F
 from .forms import HabitForm
 from .models import TaskTracker, Habit, Streak, Achievement
@@ -148,37 +149,37 @@ class HabitManagerView(View):
                             'Exercise': {
                                 'frequency': '2',
                                 'period': 'weekly',
-                                'goal': '1 month',
+                                'goal': '30',
                                 'notes': 'Exercising regularly to maintain physical fitness.'
                             },
                             'Reading': {
                                 'frequency': '1',
                                 'period': 'daily',
-                                'goal': '1 month',
+                                'goal': '30',
                                 'notes': 'Reading habit for personal growth and learning.'
                             },
                             'Brush your Teeth': {
                                 'frequency': '2',
                                 'period': 'daily',
-                                'goal': '1 month',
+                                'goal': '30',
                                 'notes': 'Reminder to maintain oral hygiene by brushing teeth twice daily.'
                             },
                             'Budgeting': {
                                 'frequency': '1',
                                 'period': 'weekly',
-                                'goal': '1 month',
+                                'goal': '30',
                                 'notes': 'Budget finances regularly for financial stability and planning'
                             },
                             'Meditation': {
                                 'frequency': '1',
                                 'period': 'daily',
-                                'goal': '1 month',
+                                'goal': '30',
                                 'notes': 'Daily meditation practice for mental well-being and stress relief.'
                             },
                              'Monthly Review': {
                                 'frequency': '1',
                                 'period': 'monthly',
-                                'goal': '1 year',
+                                'goal': '365',
                                 'notes': 'Reflect on achievements and set goals for the upcoming month.'
                             }
                         }
@@ -608,3 +609,5 @@ class HabitAnalysis(View):
         habit_dict['streak'] = list(habit.streak.values())
         
         return JsonResponse(habit_dict, safe=False)
+
+

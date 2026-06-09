@@ -1,9 +1,279 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-    <h2>You have been logged out</h2>
-    <div class="border-top pt-3">
-        <small class="text-muted">
-            <a class="ml-2" href="{% url 'login' %}">Log In Again</a>
-        </small>
+<style>
+    /* Fullscreen Logout Page */
+    .logout-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        overflow-y: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 20px;
+    }
+
+    /* Logout Card */
+    .logout-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        animation: fadeInUp 0.5s ease;
+        max-width: 450px;
+        width: 100%;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Card Header */
+    .logout-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 50px 40px;
+        text-align: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .logout-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 10s ease infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    .logout-icon {
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(10px);
+        border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .logout-icon i {
+        font-size: 50px;
+        color: white;
+    }
+
+    .logout-header h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .logout-header p {
+        opacity: 0.9;
+        margin-bottom: 0;
+        position: relative;
+        z-index: 2;
+        font-size: 1rem;
+    }
+
+    /* Card Body */
+    .logout-body {
+        padding: 40px;
+    }
+
+    .logout-message {
+        margin-bottom: 30px;
+    }
+
+    .logout-message i {
+        font-size: 60px;
+        color: #11998e;
+        margin-bottom: 20px;
+        display: inline-block;
+    }
+
+    .logout-message h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .logout-message p {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    /* Button */
+    .btn-login-again {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        padding: 14px 30px;
+        border-radius: 50px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .btn-login-again:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-login-again:active {
+        transform: translateY(0);
+    }
+
+    /* Home Link */
+    .home-link {
+        display: block;
+        margin-top: 20px;
+        color: #888;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .home-link:hover {
+        color: #667eea;
+    }
+
+    /* Countdown Timer */
+    .countdown {
+        margin-top: 20px;
+        font-size: 0.85rem;
+        color: #aaa;
+    }
+
+    .countdown span {
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .logout-card {
+            max-width: 95%;
+        }
+        
+        .logout-header {
+            padding: 35px 25px;
+        }
+        
+        .logout-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .logout-body {
+            padding: 30px 25px;
+        }
+        
+        .logout-icon {
+            width: 75px;
+            height: 75px;
+        }
+        
+        .logout-icon i {
+            font-size: 38px;
+        }
+        
+        .logout-message i {
+            font-size: 45px;
+        }
+        
+        .logout-message h3 {
+            font-size: 1.3rem;
+        }
+    }
+</style>
+
+<div class="logout-fullscreen">
+    <div class="logout-card">
+        <div class="logout-header">
+            <div class="logout-icon">
+                <i class="bi bi-box-arrow-right"></i>
+            </div>
+            <h2>See You Soon!</h2>
+            <p>You have been successfully logged out</p>
+        </div>
+        
+        <div class="logout-body">
+            <div class="logout-message">
+                <i class="bi bi-emoji-smile"></i>
+                <h3>Logged Out Successfully</h3>
+                <p>Thank you for using Habit Tracker. We hope to see you again soon!</p>
+            </div>
+            
+            <a href="{% url 'login' %}" class="btn-login-again">
+                <i class="bi bi-box-arrow-in-right"></i> Log In Again
+            </a>
+            
+            <a href="{% url 'login' %}" class="home-link">
+                <i class="bi bi-house"></i> Return to Login
+            </a>
+            
+            <div class="countdown">
+                Redirecting to login page in <span id="countdown">5</span> seconds...
+            </div>
+        </div>
     </div>
-{% endblock content %}
+</div>
+
+<script>
+    // Auto-redirect countdown
+    let seconds = 5;
+    const countdownElement = document.getElementById('countdown');
+    
+    const interval = setInterval(function() {
+        seconds--;
+        if (countdownElement) {
+            countdownElement.textContent = seconds;
+        }
+        
+        if (seconds <= 0) {
+            clearInterval(interval);
+            window.location.href = "{% url 'login' %}";
+        }
+    }, 1000);
+</script>
+{% endblock %}
