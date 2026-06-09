@@ -746,6 +746,20 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         showTasks('daily');
+
+        // Ask notification permission
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // Show notification if tasks are due today
+        let dueTasks = {{ due_today_tasks|length }};
+
+        if (dueTasks > 0 && Notification.permission === "granted") {
+            new Notification("Habit Tracker Reminder", {
+                body: `You have ${dueTasks} task(s) due today!`
+            });
+        }
     });
 
     function showTasks(period) {
