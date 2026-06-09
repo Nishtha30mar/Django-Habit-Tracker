@@ -547,55 +547,56 @@
             {% endif %}
         </div>
 
-        <!-- Active Tasks -->
+        <!-- Active Habits -->
         <div id="weekly-tasks" style="display: none;" class="task-container">
             {% if available_tasks %}
                 <div class="task-grid">
-                    {% for task in available_tasks %}
+                    {% for habit in available_tasks %}
                         <div class="task-card task-card-active p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h4 class="fw-bold mb-1">{{ task.habit.name|capfirst }}</h4>
+                                    <h4 class="fw-bold mb-1">{{ habit.name|capfirst }}</h4>
                                     <span class="badge-modern bg-primary text-white">
                                         <i class="bi bi-play-fill me-1"></i>Active
                                     </span>
                                 </div>
                                 <div class="timer-badge">
                                     <i class="bi bi-calendar-check"></i>
-                                    {{ task.due_date|date:"M d" }}
+                                    {{ habit.start_date|date:"M d" }}
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <small class="text-muted">
-                                        <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period|capfirst }} Habit
-                                    </small>
-                                    <small class="text-muted">
-                                        <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
-                                    </small>
-                                </div>
-                            </div>
-                            <p class="mb-3">
-                                <i class="bi bi-hourglass-split me-2 text-warning"></i>
-                                Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+
+                            <p class="text-muted mb-2">
+                                {{ habit.period|capfirst }} Habit • {{ habit.frequency }}x
                             </p>
-                            <form method="post" action="{% url 'habit-home' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="task_id" value="{{ task.id }}">
-                                <input type="hidden" name="habit_id" value="{{ task.habit.id }}">
-                                <input type="hidden" name="task_status" value="Completed">
-                                <button type="submit" class="complete-btn btn w-100 text-white">
-                                    <i class="bi bi-check2-circle me-2"></i>Mark as Complete
-                                </button>
-                            </form>
+
+                            <p class="mb-2">
+                                <strong>Started:</strong>
+                                {{ habit.start_date|date:"l, F d, Y" }} at {{ habit.start_date|date:"g:i A" }}
+                            </p>
+
+                            <p class="mb-3">
+                                <strong>Goal completion:</strong>
+                                {{ habit.completion_date|date:"l, F d, Y" }} at {{ habit.completion_date|date:"g:i A" }}
+                            </p>
+
+                            {% if habit.notes %}
+                                <p class="mb-3">
+                                    <strong>Notes:</strong> {{ habit.notes }}
+                                </p>
+                            {% endif %}
+
+                            <a href="{% url 'habit_detail' habit_id=habit.id %}" class="btn btn-primary w-100 rounded-pill">
+                                <i class="bi bi-eye me-2"></i>View Details
+                            </a>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="empty-state">
                     <div style="font-size: 70px;">📭</div>
-                    <h3 class="fw-bold mb-2">No Active Tasks</h3>
-                    <p class="text-muted mb-3">You don't have any active tasks right now.</p>
+                    <h3 class="fw-bold mb-2">No Active Habits</h3>
+                    <p class="text-muted mb-3">You don't have any habits currently in progress.</p>
                     <a href="{% url 'habit_creation' %}" class="btn btn-primary rounded-pill px-4">
                         <i class="bi bi-plus-circle me-2"></i>Create a Habit
                     </a>
@@ -607,44 +608,39 @@
         <div id="upcoming-tasks" style="display: none;" class="task-container">
             {% if upcoming_tasks %}
                 <div class="task-grid">
-                    {% for task in upcoming_tasks %}
+                    {% for habit in upcoming_tasks %}
                         <div class="task-card task-card-upcoming p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h4 class="fw-bold mb-1">{{ task.habit.name|capfirst }}</h4>
+                                    <h4 class="fw-bold mb-1">{{ habit.name }}</h4>
                                     <span class="badge-modern bg-secondary text-white">
-                                        <i class="bi bi-calendar-plus me-1"></i>Upcoming
+                                        Upcoming
                                     </span>
                                 </div>
-                                <div class="timer-badge">
-                                    <i class="bi bi-clock"></i>
-                                    {{ task.due_date|date:"M d" }}
-                                </div>
                             </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <small class="text-muted">
-                                        <i class="bi bi-arrow-repeat me-1"></i>{{ task.habit.period|capfirst }} Habit
-                                    </small>
-                                    <small class="text-muted">
-                                        <i class="bi bi-tag me-1"></i>Task #{{ task.task_number }}
-                                    </small>
-                                </div>
-                            </div>
+
+                            <p class="text-muted mb-2">
+                                {{ habit.period|capfirst }} Habit
+                            </p>
+
                             <p class="mb-2">
-                                <i class="bi bi-play-circle me-2 text-success"></i>
-                                Start: {{ task.start_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+                                Start: {{ habit.start_date|date:"l, F d, Y" }} at {{ habit.start_date|date:"g:i A" }}
                             </p>
-                            <p class="mb-3">
-                                <i class="bi bi-flag me-2 text-danger"></i>
-                                Due: {{ task.due_date|date:"l, F d, Y" }} at {{ task.due_date|date:"g:i A" }}
+
+                            <p class="mb-2">
+                                Goal completion: {{ habit.completion_date|date:"l, F d, Y" }} at {{ habit.completion_date|date:"g:i A" }}
                             </p>
-                            {% if task.habit.notes %}
-                                <div class="alert alert-light rounded-3 p-2 mb-0 small">
-                                    <i class="bi bi-pencil-square me-2"></i>
-                                    <small>{{ task.habit.notes }}</small>
-                                </div>
+
+                            {% if habit.notes %}
+                                <p class="mb-0">
+                                    <strong>Notes:</strong> {{ habit.notes }}
+                                </p>
                             {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="empty-state">
+                            <h3>No Upcoming Habits</h3>
+                            <p>No habits are scheduled to start later.</p>
                         </div>
                     {% endfor %}
                 </div>

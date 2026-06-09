@@ -52,27 +52,25 @@ class TaskTracker(models.Model):
     def create_tasks(cls, habit, n=0):
         if not habit.start_date or habit.num_of_tasks <= 0:
             return
-            
-        time_jump = habit.goal / habit.num_of_tasks
-        time_skip = timedelta(hours=time_jump * 24)
 
-        due_date = habit.start_date
-        current_start_date = habit.start_date
-        default = 'In progress'
+        period_days = convert_period_to_days(habit.period)
+        total_periods = habit.goal // period_days
+        task_number = n + 1
 
-        for i in range(n + 1, habit.num_of_tasks + (n + 1)):
-            if i != n + 1:
-                due_date += time_skip
-                current_start_date += time_skip
+        for period_index in range(total_periods):
+            period_start = habit.start_date + timedelta(days=period_index * period_days)
+            period_due = period_start
 
-            cls.objects.create(
-                habit=habit,
-                due_date=due_date,
-                task_number=i,
-                task_status=default,
-                start_date=current_start_date
-            )
-
+            for _ in range(habit.frequency):
+                cls.objects.create(
+                    habit=habit,
+                    start_date=period_start,
+                    due_date=period_due,
+                    task_number=task_number,
+                    task_status='In progress'
+                )
+                task_number += 1
+                
     @classmethod
     def update_failed_tasks(cls, user_id):
         updated_habit_ids = []

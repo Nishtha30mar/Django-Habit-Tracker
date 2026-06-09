@@ -119,74 +119,46 @@ def longest_streak_for_habit(id):
     return Habit.objects.prefetch_related('streak').get(id=id)
 
 
+
+
 def due_today_tasks(user_id):
     """
-    Retrieve tasks due today for a given user.
-
-    Parameters
-    ----------
-    user_id : int
-        The ID of the user for whom tasks are to be retrieved.
-
-    Returns
-    -------
-    QuerySet
-        A queryset containing tasks due today for the user.
+    Tasks due today and still not completed.
     """
-    now = timezone.now()
-    twenty_four_hours = now + timedelta(hours=25, minutes=2)
-    due_today = TaskTracker.objects.filter(
+    today = timezone.localdate()
+
+    return TaskTracker.objects.filter(
         habit__user_id=user_id,
-        due_date__range=(now, twenty_four_hours),
-        task_status='In progress'
-    )
-    return due_today
+        task_status='In progress',
+        due_date__date=today
+    ).order_by('due_date')
 
 
 def active_tasks(user_id):
     """
-    Retrieve available tasks for a given user.
-
-    Parameters
-    ----------
-    user_id : int
-        The ID of the user for whom tasks are to be retrieved.
-
-    Returns
-    -------
-    QuerySet
-        A queryset containing available tasks for the user.
+    Active habits:
+    Habits that have started and are not completed yet.
+    This is habit-based, not task-based.
     """
-    now = timezone.now() + timedelta(hours=1)
-    tasks = TaskTracker.objects.filter(
-        habit__user_id=user_id,
-        task_status='In progress',
-        start_date__lte=now,
-        due_date__gt=now
-    )
-    return tasks
+    today = timezone.localdate()
 
-
+    return Habit.objects.filter(
+        user_id=user_id,
+        start_date__date__lte=today,
+        completion_date__date__gte=today
+    ).order_by('start_date')
+    
 def upcoming_tasks(user_id):
     """
-    Retrieve upcoming tasks for a given user.
-
-    Parameters
-    ----------
-    user_id : int
-        The ID of the user for whom upcoming tasks are to be retrieved.
-
-    Returns
-    -------
-    queryset
-        A queryset containing upcoming tasks for the specified user,
-        starting at least one hour from the current time.
+    Upcoming habits:
+    Habits whose start date is in the future.
     """
-    tasks = TaskTracker.objects.filter(habit__user_id=user_id,
-                                       start_date__gte=timezone.now() + timedelta(hours=1),
-                                       task_number=1)
-    return tasks
+    today = timezone.localdate()
 
+    return Habit.objects.filter(
+        user_id=user_id,
+        start_date__date__gt=today
+    ).order_by('start_date')
 
 def fully_completed_habits(user_id):
     """
