@@ -35,12 +35,12 @@ class HabitForm(forms.ModelForm):
     ]
 
     GOAL_CHOICES = [
-        ('3 days', "3 Day's"),
+        ('3 days', "3 Days"),
         ('1 week', '1 Week'),
         ('1 month', '1 Month'),
-        ('2 months', "2 Month's"),
-        ('3 months', "3 Month's"),
-        ('6 months', "6 Month's"),
+        ('2 months', "2 Months"),
+        ('3 months', "3 Months"),
+        ('6 months', "6 Months"),
         ('1 year', '1 Year')
     ]
 

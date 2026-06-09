@@ -9,8 +9,9 @@ from django.contrib.auth.models import User
 from django.db.models import Count, Q, Sum, Avg, Max, Min, F
 from .forms import HabitForm
 from .models import TaskTracker, Habit, Streak, Achievement
+
 from .analytics import (
-    due_today_tasks, active_tasks, upcoming_tasks,
+    due_today_tasks, active_tasks, upcoming_tasks, fully_completed_habits,
     calculate_progress, longest_current_streak_over_all_habits,
     all_tracked_habits, habits_by_period,
     longest_streak_over_all_habits, num_inprogress_tasks,
@@ -55,6 +56,8 @@ class HabitView(View):
         today_tasks = due_today_tasks(user_id=user_id)
         active_task = active_tasks(user_id=user_id)
         upcoming_task = upcoming_tasks(user_id=user_id)
+        completed_habits = fully_completed_habits(user_id)
+        
         user = User.objects.get(id=user_id)
         full_name = user.get_full_name().strip()
 
@@ -62,17 +65,18 @@ class HabitView(View):
             user_full_name = full_name.split()[0].capitalize()
         else:
             user_full_name = user.username.capitalize()
+            
         current_streak = Streak.objects.filter(
             habit__user=request.user
         ).aggregate(Max('current_streak'))['current_streak__max'] or 0
-        context = {
         
+        context = {
             'upcoming_tasks': upcoming_task,
             'due_today_tasks': today_tasks,
             'available_tasks': active_task,
+            'completed_habits': completed_habits,
             'user_full_name': user_full_name,
             'current_streak': current_streak,
-            
         }
 
         return render(request, 'home.html', context)
@@ -274,8 +278,6 @@ class HabitManagerView(View):
         weekly_habits = habits_by_period('weekly')(all_active_habits)
         monthly_habits = habits_by_period('monthly')(all_active_habits)
 
-
-
         # Calculate progress percentage for each active habit
         calculate_progress(all_active_habits)
         calculate_progress(daily_habits)
@@ -332,19 +334,6 @@ class HabitManagerView(View):
         else:
             success_rate = 0
 
-        # Debugging output in terminal
-        print("\n===== HABIT DETAIL DEBUG =====")
-        print("Habit:", habit.name)
-        print("Tasks:")
-        for task in tasks:
-            print(f"Task #{task.task_number}: {task.task_status}")
-        print("Completed:", completed_count)
-        print("Failed:", failed_count)
-        print("In Progress:", in_progress_count)
-        print("Current Streak:", streak.current_streak)
-        print("Longest Streak:", streak.longest_streak)
-        print("==============================\n")
-
         context = {
             'habit': habit,
             'tasks': tasks,
@@ -358,6 +347,8 @@ class HabitManagerView(View):
         }
 
         return render(request, 'habit_details.html', context)
+
+
 class HabitAnalysis(View):
     """
     View class for handling habit analysis and analytics dashboard.

@@ -13,7 +13,7 @@ from datetime import timedelta
 from functools import partial
 import numpy as np
 from django.utils import timezone
-from django.db.models import Min, Prefetch
+from django.db.models import Min, Prefetch, Max
 from habit.models import TaskTracker, Habit, Streak, Achievement
 
 
@@ -188,6 +188,68 @@ def upcoming_tasks(user_id):
     return tasks
 
 
+def fully_completed_habits(user_id):
+    """
+    Retrieve all habits that have been fully completed (all tasks completed)
+    for a given user, ordered by most recent completion.
+
+    This includes:
+    - Habits that were fully completed (all tasks marked as 'Completed')
+    - Habits that appear in analytics as "completed habits"
+    - Historical habits that were completed before this feature existed
+    
+    Parameters
+    ----------
+    user_id : int
+        The ID of the user for whom completed habits are to be retrieved.
+
+    Returns
+    -------
+    list
+        A list containing all habits where all tasks are completed,
+        ordered by the most recent task completion date.
+    """
+    # Get ALL habits for the user (not just active ones)
+    all_user_habits = Habit.objects.filter(user_id=user_id)
+    
+    fully_completed_list = []
+    habit_completion_dates = {}
+    
+    for habit in all_user_habits:
+        # Get all tasks for this habit
+        all_tasks = TaskTracker.objects.filter(habit=habit)
+        total_tasks = all_tasks.count()
+        completed_tasks = all_tasks.filter(task_status='Completed').count()
+        
+        # Check if ALL tasks are completed
+        if total_tasks > 0 and completed_tasks == total_tasks:
+            fully_completed_list.append(habit)
+            
+            # Get the most recent task completion date for ordering
+            last_completion = all_tasks.filter(
+                task_status='Completed'
+            ).aggregate(last_date=Max('task_completion_date'))
+            
+            if last_completion['last_date']:
+                habit_completion_dates[habit.id] = last_completion['last_date']
+            elif habit.completion_date:
+                habit_completion_dates[habit.id] = habit.completion_date
+            else:
+                habit_completion_dates[habit.id] = habit.creation_time
+    
+    # Sort by most recent completion date
+    fully_completed_list.sort(
+        key=lambda h: habit_completion_dates.get(h.id, h.creation_time),
+        reverse=True
+    )
+    
+    # Prefetch streak data for each habit
+    for habit in fully_completed_list:
+        habit.streak.all()
+    
+    return fully_completed_list
+
+
 def calculate_progress(habits):
     """
     Calculate progress percentage for each active habit.
@@ -334,22 +396,19 @@ def rank_habits(weights, period):
 def all_completed_habits(user_id):
     """
     Retrieve all completed habits for a given user.
-
-    Parameters
-    ----------
-    user_id : int
-        The ID of the user for whom completed habits are to be retrieved.
-
-    Returns
-    -------
-    queryset
-        A queryset containing all completed habits for the specified user.
+    A habit is considered completed when all its tasks are marked as 'Completed'.
     """
-    prefetch_streaks = Prefetch('streak', queryset=Streak.objects.all())
-    return Habit.objects.prefetch_related(prefetch_streaks).filter(
-        user_id=user_id,
-        completion_date__lt=timezone.now()
-    )
+    habits = Habit.objects.filter(user_id=user_id)
+    completed_habits = []
+    
+    for habit in habits:
+        total_tasks = TaskTracker.objects.filter(habit=habit).count()
+        completed_tasks = TaskTracker.objects.filter(habit=habit, task_status='Completed').count()
+        
+        if total_tasks > 0 and completed_tasks == total_tasks:
+            completed_habits.append(habit)
+    
+    return completed_habits
 
 
 def extract_first_failed_task(updated_task_ids):
@@ -399,9 +458,3 @@ def update_user_activity(user_id):
         
         # Update achievements for broken streaks
         Achievement.update_achievements(first_failed_tasks)
-
-def completed_tasks_history(user_id):
-    return TaskTracker.objects.filter(
-        habit__user_id=user_id,
-        task_status='Completed'
-    ).order_by('-task_completion_date')
